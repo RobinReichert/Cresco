@@ -1,7 +1,7 @@
 #!/bin/bash
 
 case "$1" in
-  build_docs)
+  serve_docs)
     docker compose -f docker/docker-compose-docs.yml up
     ;;
   *)

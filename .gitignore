@@ -3,3 +3,5 @@ build/
 
 # Local Jekyll/Ruby lock files
 docs/local/Gemfile.lock
+
+.DS_STORE

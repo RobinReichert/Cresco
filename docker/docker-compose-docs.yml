@@ -1,0 +1,13 @@
+services:
+  jekyll:
+    platform: linux/amd64
+    image: ruby:3.1
+    working_dir: /docs
+    command: bash -c "gem install bundler && bundle install && jekyll serve --source /docs --destination /build/docs --config /docs/local/_config.yml --host 0.0.0.0"
+    ports:
+      - "4000:4000"
+    environment:
+      - BUNDLE_GEMFILE=/docs/local/Gemfile
+    volumes:
+      - ../docs:/docs
+      - ../build:/build

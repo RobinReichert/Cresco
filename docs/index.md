@@ -1,9 +1,10 @@
 ---
-layout: home 
 title: Home
-nav_enabled: true
+layout: home
+nav_order: 1
+permalink: /
 ---
 
 # Hello World
 
-This is a test page.
+just testing

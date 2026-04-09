@@ -38,7 +38,9 @@ jobs:
           working-directory: ./docs
       - name: Build with Jekyll
         working-directory: ./docs
-        run: bundle exec jekyll build --destination ../_site --config local/_config.yml
+        run: bundle exec jekyll build --destination ../_site --config ghp/_config.yml
+        env:
+          BUNDLE_GEMFILE: ./docs/ghp/Gemfile
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 

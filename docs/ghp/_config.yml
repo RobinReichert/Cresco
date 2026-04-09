@@ -4,3 +4,4 @@ plugins:
 exclude:
   - local
   - ghp
+baseurl: "/Cresco"

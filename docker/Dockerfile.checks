@@ -1,0 +1,11 @@
+# docker/Dockerfile.checks
+FROM node:20-alpine
+
+RUN apk add --no-cache ruby ruby-dev build-base && \
+    gem install bundler
+
+WORKDIR /app
+COPY docs/ghp/Gemfile docs/ghp/_config.yml ./docs/ghp/
+RUN bundle install --gemfile=docs/ghp/Gemfile
+
+RUN npm install -g markdownlint-cli

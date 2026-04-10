@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+REPO_ROOT=$(git rev-parse --show-toplevel)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+files_changed() {
+  echo "$STAGED" | grep -q "$1"
+}
+
+CHECKS=""
+
+append_checks() {
+  file=$1
+  CHECKS="$CHECKS $(grep -v '^\s*#\|^\s*$' "$file" | tr '\n' ' ' | sed 's/  */ \&\& /g') &&"
+}
+
+if files_changed '^docs/'; then
+    append_checks "$REPO_ROOT/scripts/pre-commit-checks/docs.sh"
+else
+  echo "docs unchanged — skipping checks"
+fi
+
+CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
+
+if [ -n "$CHECKS" ]; then
+  echo "Running checks..."
+  docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" \
+    run --rm checks sh -c "$CHECKS"  > /dev/null
+fi
+
+echo "✅ All checks passed!\n"

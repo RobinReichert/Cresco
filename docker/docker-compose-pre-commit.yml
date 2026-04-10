@@ -1,0 +1,11 @@
+# docker/docker-compose-pre-commit.yml
+services:
+  checks:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.checks
+    working_dir: /app
+    volumes:
+      - ..:/app
+    environment:
+      - BUNDLE_GEMFILE=/app/docs/ghp/Gemfile

@@ -9,13 +9,13 @@ files_changed() {
 
 CHECKS=""
 
+append_checks() {
+  file=$1
+  CHECKS="$CHECKS $(grep -v '^\s*#\|^\s*$' "$file" | tr '\n' ' ' | sed 's/  */ \&\& /g') &&"
+}
+
 if files_changed '^docs/'; then
-  CHECKS="$CHECKS echo 'Running markdownlint...' >&2 &&"
-  CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
-  CHECKS="$CHECKS echo 'Running jeykyll build...' >&2 &&"
-  CHECKS="$CHECKS cd docs &&"
-  CHECKS="$CHECKS bundle exec jekyll build --destination ../../_site --config ghp/_config.yml &&"
-  CHECKS="$CHECKS cd .. &&"
+    append_checks "$REPO_ROOT/scripts/pre-commit-checks/docs.sh"
 else
   echo "docs unchanged — skipping checks"
 fi
@@ -28,4 +28,4 @@ if [ -n "$CHECKS" ]; then
     run --rm checks sh -c "$CHECKS"  > /dev/null
 fi
 
-echo "✅ All checks passed!"
+echo "✅ All checks passed!\n"

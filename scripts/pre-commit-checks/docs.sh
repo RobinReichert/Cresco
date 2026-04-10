@@ -1,0 +1,6 @@
+  echo 'Running markdownlint...' >&2 &&"
+  npx markdownlint 'docs/**/*.md' &&"
+  echo 'Running jeykyll build...' >&2 &&"
+  cd docs &&"
+  bundle exec jekyll build --destination ../../_site --config ghp/_config.yml &&"
+  cd .. &&"

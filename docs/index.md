@@ -4,6 +4,6 @@ layout: home
 permalink: /
 ---
 
-## Hello World
+# Hello World
 
 another test

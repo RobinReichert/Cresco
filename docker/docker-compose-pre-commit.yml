@@ -1,11 +1,12 @@
 # docker/docker-compose-pre-commit.yml
 services:
   checks:
+    container_name: pre-commit 
     build:
       context: ..
-      dockerfile: docker/Dockerfile.checks
+      dockerfile: docker/Dockerfile
     working_dir: /app
     volumes:
       - ..:/app
     environment:
-      - BUNDLE_GEMFILE=/app/docs/ghp/Gemfile
+      BUNDLE_GEMFILE: /app/docs/config/Gemfile

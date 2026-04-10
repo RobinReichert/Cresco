@@ -1,5 +1,0 @@
-theme: just-the-docs
-exclude:
-  - local
-  - ghp
-favicon_ico: /assets/images/favicon.ico

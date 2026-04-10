@@ -6,4 +6,4 @@ permalink: /
 
 # Hello World
 
-just testing something
+just testing

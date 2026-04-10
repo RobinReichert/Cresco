@@ -1,5 +1,25 @@
 #!/bin/sh
-
 set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
-docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" run --rm pre-commit
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+files_changed() {
+  echo "$STAGED" | grep -q "$1"
+}
+
+CHECKS=""
+
+if files_changed '^docs/'; then
+  CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
+  CHECKS="$CHECKS bundle exec jekyll build --destination ../_site --config ghp/_config.yml &&"
+fi
+
+CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
+
+if [ -n "$CHECKS" ]; then
+  echo "Running checks..."
+  docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" \
+    run --rm checks sh -c "$CHECKS"
+fi
+
+echo "✅ All checks passed!"

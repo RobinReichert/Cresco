@@ -1,7 +1,11 @@
+# docker/docker-compose-pre-commit.yml
 services:
-  pre-commit:
-    image: node:20-alpine
+  checks:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.checks
     working_dir: /app
     volumes:
-      - .:/app
-    command: sh -c "echo test"
+      - ..:/app
+    environment:
+      - BUNDLE_GEMFILE=/app/docs/ghp/Gemfile

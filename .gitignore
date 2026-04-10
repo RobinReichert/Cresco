@@ -3,6 +3,7 @@ build/
 
 # Local Jekyll/Ruby lock files
 docs/local/Gemfile.lock
+docs/ghp/Gemfile.lock
 
 docs/.jekyll-cache
 docs/.sass-cache

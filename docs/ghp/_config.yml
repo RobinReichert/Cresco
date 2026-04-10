@@ -5,5 +5,3 @@ exclude:
   - local
   - ghp
 baseurl: "/Cresco"
-sass:
-  cache: false

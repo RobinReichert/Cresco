@@ -38,12 +38,12 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
-          working-directory: ./docs/ghp
+          working-directory: ./docs/config
       - name: Build with Jekyll
         working-directory: ./docs
-        run: bundle exec jekyll build --destination ../_site --config ghp/_config.yml
+        run: bundle exec jekyll build --destination ../_site --config config/_config.yml
         env:
-          BUNDLE_GEMFILE: ./ghp/Gemfile
+          BUNDLE_GEMFILE: ./config/Gemfile
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 

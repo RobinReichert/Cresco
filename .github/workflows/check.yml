@@ -43,7 +43,7 @@ jobs:
         run: npm install markdownlint-cli
 
       - name: Lint Markdown
-        run: npx markdownlint "docs/**/*.md"
+        run: npx markdownlint --config docs/config/.markdownlint.yml "docs/**/*.md"
 
   build:
     needs: 
@@ -60,10 +60,10 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
-          working-directory: ./docs/ghp
+          working-directory: ./docs/config
 
       - name: Build with Jekyll
         working-directory: ./docs
-        run: bundle exec jekyll build --destination ../_site --config ghp/_config.yml
+        run: bundle exec jekyll build --destination ../_site --config config/_config.yml
         env:
-          BUNDLE_GEMFILE: ./ghp/Gemfile
+          BUNDLE_GEMFILE: ./config/Gemfile

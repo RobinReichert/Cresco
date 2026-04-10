@@ -1,0 +1,15 @@
+# docker/docker-compose-docs-server.yml
+services:
+  docs-server:
+    container_name: docs-server
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    working_dir: /app
+    volumes:
+      - ../docs:/app/docs
+      - ../build:/app/build
+    command: sh -c "jekyll serve --source /app/docs --destination /app/build/docs --config /app/docs/config/_config.yml --host 0.0.0.0 --livereload"
+    ports: ["4000:4000"]
+    environment:
+      BUNDLE_GEMFILE: /app/docs/config/Gemfile

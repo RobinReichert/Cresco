@@ -11,7 +11,9 @@ CHECKS=""
 
 append_checks() {
   file=$1
-  CHECKS="$CHECKS $(grep -v '^\s*#\|^\s*$' "$file" | tr '\n' ' ' | sed 's/  */ \&\& /g') &&"
+  local commands
+  commands=$(grep -v '^\s*#\|^\s*$' "$file" | awk 'NR==1{printf $0; next} {printf " && " $0} END{print ""}')
+  CHECKS="$CHECKS $commands &&"
 }
 
 if files_changed '^docs/'; then

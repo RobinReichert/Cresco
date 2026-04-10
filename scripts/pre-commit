@@ -11,7 +11,7 @@ CHECKS=""
 
 if files_changed '^docs/'; then
   CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
-  CHECKS="$CHECKS bundle exec jekyll build --destination ../_site --config ghp/_config.yml &&"
+  CHECKS="$CHECKS bundle exec jekyll build --source docs/ --destination ../_site --config docs/ghp/_config.yml &&"
 fi
 
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')

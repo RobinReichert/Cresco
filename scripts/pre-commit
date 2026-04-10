@@ -13,7 +13,7 @@ if files_changed '^docs/'; then
   CHECKS="$CHECKS echo 'Running markdownlint...' >&2 &&"
   CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
   CHECKS="$CHECKS echo 'Running jeykyll build...' >&2 &&"
-  CHECKS="$CHECKS bundle exec jekyll build --source docs/ --destination ../_site --config docs/ghp/_config.yml &&"
+  CHECKS="$CHECKS bundle exec jekyll build --source docs/ --destination ../_site --config docs/ghp/_config.yml --no-cache &&"
 else
   echo "docs unchanged — skipping checks"
 fi

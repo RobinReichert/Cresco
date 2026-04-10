@@ -9,4 +9,3 @@ services:
       - ..:/app
     environment:
       - BUNDLE_GEMFILE=/app/docs/ghp/Gemfile
-      - SASS_CACHE_PATH=/tmp/sass-cache

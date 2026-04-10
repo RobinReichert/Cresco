@@ -5,7 +5,7 @@ RUN apk add --no-cache ruby ruby-dev build-base && \
     gem install bundler
 
 WORKDIR /app
-COPY docs/local/Gemfile docs/local/_config.yml ./docs/local/
-RUN bundle install --gemfile=docs/local/Gemfile
+COPY docs/ghp/Gemfile docs/ghp/_config.yml ./docs/ghp/
+RUN bundle install --gemfile=docs/ghp/Gemfile
 
 RUN npm install -g markdownlint-cli

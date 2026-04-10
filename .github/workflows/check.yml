@@ -43,7 +43,7 @@ jobs:
         run: npm install markdownlint-cli
 
       - name: Lint Markdown
-        run: npx markdownlint "docs/**/*.md"
+        run: npx markdownlint --config docs/ghp/.markdownlint.yml "docs/**/*.md"
 
   build:
     needs: 

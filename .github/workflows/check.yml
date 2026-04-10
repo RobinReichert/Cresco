@@ -23,9 +23,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Make check_changes.sh executable
-        run: chmod +x ./.github/check_changes.sh
-
       - id: docs_check 
         run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
 

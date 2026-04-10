@@ -2,7 +2,7 @@
 
 case "$1" in
   serve_docs)
-    docker compose -f docker/docker-compose-docs.yml up
+    docker compose -f docker/docker-compose-docs.yml run --rm docs-server
     ;;
   setup)
     if cmp -s scripts/pre-commit .git/hooks/pre-commit; then

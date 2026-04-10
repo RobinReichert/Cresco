@@ -19,7 +19,7 @@ CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
 if [ -n "$CHECKS" ]; then
   echo "Running checks..."
   docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" \
-    run --rm checks sh -c "$CHECKS"
+    run --rm checks sh -c "$CHECKS" > /dev/null 2>&1
 fi
 
 echo "✅ All checks passed!"

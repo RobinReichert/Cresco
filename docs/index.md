@@ -4,6 +4,6 @@ layout: default
 permalink: /
 ---
 
-# Hello World
+## Hello World
 
 just testing

@@ -27,7 +27,7 @@ jobs:
         run: chmod +x ./.github/check_changes.sh
 
       - id: docs_check 
-        run: ./.github/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
+        run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
 
   lint:
     needs: detect-changes

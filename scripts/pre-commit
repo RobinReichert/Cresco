@@ -14,7 +14,7 @@ if files_changed '^docs/'; then
   CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
   CHECKS="$CHECKS echo 'Running jeykyll build...' >&2 &&"
   CHECKS="$CHECKS cd docs &&"
-  CHECKS="$CHECKS bundle exec jekyll build --destination ../_site --config ghp/_config.yml &&"
+  CHECKS="$CHECKS bundle exec jekyll build --destination ../../_site --config ghp/_config.yml &&"
   CHECKS="$CHECKS cd .. &&"
 else
   echo "docs unchanged — skipping checks"
@@ -25,7 +25,7 @@ CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
 if [ -n "$CHECKS" ]; then
   echo "Running checks..."
   docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" \
-    run --rm checks sh -c "$CHECKS" 
+    run --rm checks sh -c "$CHECKS"  > /dev/null
 fi
 
 echo "✅ All checks passed!"

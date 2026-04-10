@@ -6,4 +6,4 @@ permalink: /
 
 ## Hello World
 
-trying to remove sass cache again
+trying to move sass cache to docs

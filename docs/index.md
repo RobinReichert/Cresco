@@ -6,4 +6,4 @@ permalink: /
 
 ## Hello World
 
-just testing something with hooks
+just testing something with hook

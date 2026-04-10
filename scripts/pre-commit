@@ -10,7 +10,9 @@ files_changed() {
 CHECKS=""
 
 if files_changed '^docs/'; then
+  CHECKS="$CHECKS echo 'running markdownlint...' >&2 &&"
   CHECKS="$CHECKS npx markdownlint 'docs/**/*.md' &&"
+  CHECKS="$CHECKS echo 'running jeykyll build...' >&2 &&"
   CHECKS="$CHECKS bundle exec jekyll build --source docs/ --destination ../_site --config docs/ghp/_config.yml &&"
 fi
 

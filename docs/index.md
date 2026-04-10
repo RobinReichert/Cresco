@@ -6,4 +6,4 @@ permalink: /
 
 ## Hello World
 
-testing something with hook
+trying to remove sass cache

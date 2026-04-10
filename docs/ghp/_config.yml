@@ -5,3 +5,4 @@ exclude:
   - local
   - ghp
 baseurl: "/Cresco"
+favicon_ico: /assets/images/favicon.ico

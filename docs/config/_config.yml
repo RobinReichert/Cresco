@@ -1,6 +1,5 @@
 theme: just-the-docs
 exclude:
-  - local
-  - ghp
+  - config 
 baseurl: "/Cresco"
 favicon_ico: /assets/images/favicon.ico

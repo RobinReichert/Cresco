@@ -22,8 +22,6 @@ else
   echo "docs unchanged — skipping checks"
 fi
 
-echo $CHECKS >&2
-
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
 
 if [ -n "$CHECKS" ]; then

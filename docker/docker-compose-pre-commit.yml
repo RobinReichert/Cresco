@@ -1,0 +1,7 @@
+services:
+  pre-commit:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "echo test"

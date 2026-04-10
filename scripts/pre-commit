@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e
+REPO_ROOT=$(git rev-parse --show-toplevel)
+docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" run --rm pre-commit

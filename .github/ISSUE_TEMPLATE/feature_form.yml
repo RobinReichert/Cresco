@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a new idea or improvement
+labels: ["enhancement"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Feature summary
+      description: A short, clear name for the feature.
+      placeholder: e.g. Add dark mode support to the dashboard
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this feature solve? What's missing today?
+      placeholder: There is no way to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like to see. How should it work?
+      placeholder: Add...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of the project does this regard.
+      description: What would have to be changed?
+      options:
+        - Software
+        - Hardware
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Mockups, references, links, or anything else that helps explain the idea.
+    validations:
+      required: false

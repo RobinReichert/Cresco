@@ -1,0 +1,53 @@
+name: Refactor proposal
+description: Propose a code or architecture improvement
+labels: ["refactor"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Refactor summary
+      description: A short description of what you want to refactor.
+      placeholder: e.g. Rename ... to ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Refactor type
+      description: What kind of refactor is this?
+      options:
+        - Tech debt cleanup
+        - Performance improvement
+        - Code organisation / structure
+        - Dependency update or removal
+        - Test coverage improvement
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why does this refactor need to happen? What's the current problem?
+      placeholder: e.g. The main function seems cryptic right now
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution 
+    attributes:
+      label: Solution 
+      description: How would you approach this?
+      placeholder: e.g. Move logic into smaller functions
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Diagrams, benchmarks, related issues, or anything else relevant.
+    validations:
+      required: false

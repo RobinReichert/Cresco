@@ -8,4 +8,4 @@ services:
     volumes:
       - ..:/app
     environment:
-      - BUNDLE_GEMFILE=/app/docs/ghp/Gemfile
+      - BUNDLE_GEMFILE=/app/docs/local/Gemfile

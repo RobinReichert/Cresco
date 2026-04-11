@@ -37,15 +37,18 @@ cargo fmt
 - Use `PascalCase` for types, structs, enums, and traits.
 - Use `SCREAMING_SNAKE_CASE` for constants and statics.
 - Prefer explicit types in public APIs; let type inference handle local variables.
-- Avoid `unwrap()` and `expect()` in production code paths. Use proper error propagation with `?` or match on `Result`/`Option`.
-- Keep functions short and single-purpose. If a function doesn't fit on one screen, consider splitting it.
+- Avoid `unwrap()` and `expect()` in production code paths. Use proper error
+propagation with `?` or match on `Result`/`Option`.
+- Keep functions short and single-purpose. If a function doesn't fit on one screen,
+consider splitting it.
 - Prefer `match` over long `if-else` chains for exhaustive pattern matching.
 
 ---
 
 ## Documentation Style
 
-All documentation is written in Markdown and lives in the `docs/` directory, processed by Jekyll with the Just the Docs theme.
+All documentation is written in Markdown and lives in the `docs/` directory,
+processed by Jekyll with the Just the Docs theme.
 
 ### File Frontmatter
 
@@ -129,7 +132,8 @@ fn has_pending_data(&self) -> bool { ... }
 
 ### Acronyms in Names
 
-Treat acronyms as words. Use `Uart`, `Spi`, `Dma`, not `UART`, `SPI`, `DMA` in type names. This keeps `rustfmt` and autocomplete happy:
+Treat acronyms as words. Use `Uart`, `Spi`, `Dma`, not `UART`, `SPI`, `DMA
+` in type names. This keeps `rustfmt` and autocomplete happy:
 
 ```rust
 struct UartDriver { ... }   // ✓
@@ -142,16 +146,16 @@ struct UARTDriver { ... }   // ✗
 
 ### Format
 
-```
+```text
 <type>/<short-description>
 ```
 
 Use lowercase and hyphens. No spaces, no underscores, no uppercase.
 
-### Types
+### Branch Types
 
 | Type | When to use |
-|---|---|
+| --- | --- |
 | `feat/` | New functionality |
 | `fix/` | Bug fix |
 | `refactor/` | Code restructuring without behaviour change |
@@ -160,9 +164,9 @@ Use lowercase and hyphens. No spaces, no underscores, no uppercase.
 | `chore/` | Tooling, CI, dependency updates |
 | `hw/` | Hardware bring-up, board support, linker changes |
 
-### Examples
+### Branch Examples
 
-```
+```text
 feat/uart-dma-rx
 fix/spi-clock-polarity
 docs/style-guide
@@ -176,16 +180,16 @@ chore/update-embassy
 
 ### Title Format
 
-```
+```text
 [Type] Short imperative description
 ```
 
 Use the imperative mood as if completing the sentence *"This issue will…"*
 
-### Types
+### Issue Types
 
 | Label | Description |
-|---|---|
+| --- | --- |
 | `[bug]` | Something is broken or behaves incorrectly |
 | `[feat]` | A new feature or capability |
 | `[refactor]` | Internal restructuring |
@@ -194,9 +198,9 @@ Use the imperative mood as if completing the sentence *"This issue will…"*
 | `[chore]` | Maintenance, dependency bump, CI |
 | `[question]` | Needs discussion or decision before work begins |
 
-### Examples
+### Issue Examples
 
-```
+```text
 [bug] UART RX drops bytes at 921600 baud
 [feat] Add watchdog timer support
 [hw] SPI2 MISO conflicts with LED GPIO on rev B board

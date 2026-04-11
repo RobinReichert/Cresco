@@ -147,31 +147,17 @@ struct UARTDriver { ... }   // ✗
 ### Format
 
 ```text
-<type>/<short-description>
+<related-issue>-<short-description>
 ```
 
 Use lowercase and hyphens. No spaces, no underscores, no uppercase.
 
-### Branch Types
-
-| Type | When to use |
-| --- | --- |
-| `feat/` | New functionality |
-| `fix/` | Bug fix |
-| `refactor/` | Code restructuring without behaviour change |
-| `docs/` | Documentation only |
-| `test/` | Adding or updating tests |
-| `chore/` | Tooling, CI, dependency updates |
-| `hw/` | Hardware bring-up, board support, linker changes |
-
 ### Branch Examples
 
 ```text
-feat/uart-dma-rx
-fix/spi-clock-polarity
-docs/style-guide
-hw/stm32g4-bsp-init
-chore/update-embassy
+35-uart-dma-rx
+12-stm32g4-bsp-init
+56-update-embassy
 ```
 
 ---
@@ -186,7 +172,7 @@ chore/update-embassy
 
 Use the imperative mood as if completing the sentence *"This issue will…"*
 
-### Issue Types
+### Types
 
 | Label | Description |
 | --- | --- |

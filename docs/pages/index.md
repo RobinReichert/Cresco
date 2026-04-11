@@ -25,7 +25,6 @@ A open source indoor hydroponics system
 The name **Cresco** comes from the Latin word crescere — meaning "to grow".
 It felt like a natural fit for a project built around nurturing plants
 and pushing the boundaries of what open-source hydroponics can be.
-
 Cresco is an open-source smart hydroponics system that takes the guesswork
 out of soilless growing. Designed with a focus on clean aesthetics and
 intelligent automation, it continuously monitors your growing environment

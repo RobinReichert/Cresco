@@ -3,9 +3,23 @@ set -e
 REPO_ROOT=$(git rev-parse --show-toplevel)
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
 files_changed() {
   echo "$STAGED" | grep -q "$1"
 }
+
+WORKTREE_DIR=$(mktemp -d)
+cleanup() {
+  git worktree remove --force "$WORKTREE_DIR"
+  rm -rf "$WORKTREE_DIR"
+}
+trap cleanup EXIT
+
+git worktree add --detach --no-checkout "$WORKTREE_DIR" > /dev/null 2>&1
+GIT_INDEX_FILE="$REPO_ROOT/.git/index" git -C "$WORKTREE_DIR" checkout-index -f -a
 
 CHECKS=""
 
@@ -19,7 +33,7 @@ append_checks() {
 if files_changed '^docs/'; then
     append_checks "$REPO_ROOT/scripts/pre-commit-checks/docs.sh"
 else
-  echo "docs unchanged — skipping checks"
+  echo "\033[90mdocs unchanged — skipping checks \033[0m"
 fi
 
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
@@ -27,7 +41,10 @@ CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
 if [ -n "$CHECKS" ]; then
   echo "Running checks..."
   docker compose -f "$REPO_ROOT/docker/docker-compose-pre-commit.yml" \
-    run --rm checks sh -c "$CHECKS"  > /dev/null
+    run --rm \
+    -v "$WORKTREE_DIR:/app" \
+    checks \
+    sh -c "$CHECKS"  > /dev/null
+  echo "\033[32mAll checks passed!\033[0m"
 fi
 
-echo "✅ All checks passed!\n"

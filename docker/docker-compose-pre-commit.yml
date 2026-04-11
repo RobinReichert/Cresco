@@ -6,7 +6,5 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     working_dir: /app
-    volumes:
-      - ..:/app
     environment:
       BUNDLE_GEMFILE: /app/docs/config/Gemfile

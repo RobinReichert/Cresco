@@ -22,8 +22,7 @@ A open source indoor hydroponics system
 
 ## What is Cresco?
 
-The name **Cresco** comes from the Latin word crescere — meaning "to grow".
-It felt like a natural fit for a project built around nurturing plants
+The name **Cresco** comes from the Latin word crescere — meaning "to grow". It felt like a natural fit for a project built around nurturing plants
 and pushing the boundaries of what open-source hydroponics can be.
 
 Cresco is an open-source smart hydroponics system that takes the guesswork

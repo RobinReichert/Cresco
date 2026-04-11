@@ -33,7 +33,7 @@ append_checks() {
 if files_changed '^docs/'; then
     append_checks "$REPO_ROOT/scripts/pre-commit-checks/docs.sh"
 else
-  echo "\033[37mdocs unchanged — skipping checks \033[0m"
+  echo "\033[90mdocs unchanged — skipping checks \033[0m"
 fi
 
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')

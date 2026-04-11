@@ -33,7 +33,7 @@ append_checks() {
 if files_changed '^docs/'; then
     append_checks "$REPO_ROOT/scripts/pre-commit-checks/docs.sh"
 else
-  echo "\033[37m docs unchanged — skipping checks \033[0m\n"
+  echo "\033[37mdocs unchanged — skipping checks \033[0m"
 fi
 
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
@@ -45,6 +45,6 @@ if [ -n "$CHECKS" ]; then
     -v "$WORKTREE_DIR:/app" \
     checks \
     sh -c "$CHECKS"  > /dev/null
+  echo "\033[32mAll checks passed!\033[0m"
 fi
 
-echo "\033[32mAll checks passed!\033[0m"

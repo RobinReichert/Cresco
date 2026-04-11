@@ -3,3 +3,4 @@ exclude:
   - config 
 baseurl: "/Cresco"
 favicon_ico: /assets/images/favicon.ico
+logo: "/assets/images/logo.png"

@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/logo_dark.png">
     <source media="(prefers-color-scheme: light)" srcset=".github/logo_light.png">
-    <img src=".github/logo_light.png" width="120" alt="Cresco logo">
+    <img src=".github/logo_light.png" width="240" alt="Cresco logo">
   </picture>
 </p>
 

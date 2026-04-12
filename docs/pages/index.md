@@ -13,7 +13,9 @@ permalink: /
 A open source indoor hydroponics system
 {: .fs-6 .fw-300 }
 
-[Get started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+<!-- markdownlint-disable MD013 -->
+[Get started]({{ site.baseurl }}{% link pages/software/getting_started.md %}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+<!-- markdownlint-enable MD013 -->
 [View on GitHub][github-link]{: .btn .fs-5 .mb-4 .mb-md-0 }
 
 [github-link]: https://github.com/RobinReichert/Cresco
@@ -32,36 +34,6 @@ intelligent automation, it continuously monitors your growing environment
 and keeps everything running at optimal conditions. Built to be extensible
 and community-driven, Cresco is for growers who want full control
 over their system without sacrificing simplicity or style.
-
----
-
-## Requirements
-
-- Docker
-
----
-
-## Getting started
-
-{: #getting-started }
-
-### Installation
-
-To get started, clone the repository:
-
-```bash
-git clone https://github.com/RobinReichert/Cresco.git
-```
-
-### Quick start
-
-Once cloned, run the setup script from the project root:
-
-```bash
-./cresco.sh setup
-```
-
-This will set up everything you need to get your Cresco system up and running.
 
 ---
 

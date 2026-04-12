@@ -13,7 +13,9 @@ permalink: /
 A open source indoor hydroponics system
 {: .fs-6 .fw-300 }
 
-[Get started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+<!-- markdownlint-disable MD013 -->
+[Get started]({{ site.baseurl }}{% link pages/software/getting_started.md %}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+<!-- markdownlint-enable MD013 -->
 [View on GitHub][github-link]{: .btn .fs-5 .mb-4 .mb-md-0 }
 
 [github-link]: https://github.com/RobinReichert/Cresco

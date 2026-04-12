@@ -35,36 +35,6 @@ over their system without sacrificing simplicity or style.
 
 ---
 
-## Requirements
-
-- Docker
-
----
-
-## Getting started
-
-{: #getting-started }
-
-### Installation
-
-To get started, clone the repository:
-
-```bash
-git clone https://github.com/RobinReichert/Cresco.git
-```
-
-### Quick start
-
-Once cloned, run the setup script from the project root:
-
-```bash
-./cresco.sh setup
-```
-
-This will set up everything you need to get your Cresco system up and running.
-
----
-
 ## License
 
 Cresco is distributed under the [MIT license](https://github.com/RobinReichert/Cresco/blob/main/LICENSE).

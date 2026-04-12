@@ -2,6 +2,29 @@ title: Cresco
 theme: just-the-docs
 exclude:
   - config 
+  - .sass-cache
+  - .jekyll-cache
+
 baseurl: "/Cresco"
 favicon_ico: /assets/images/favicon.ico
 logo: "/assets/images/logo.png"
+
+callouts:
+  highlight:
+    color: yellow
+  important:
+    title: Important
+    color: blue
+  new:
+    title: New
+    color: green
+  note:
+    title: Note
+    color: grey-dk 
+  warning:
+    title: Warning
+    color: red
+  tip:
+    title: Tip
+    color: purple
+

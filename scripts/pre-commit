@@ -35,6 +35,11 @@ if files_changed '^docs/'; then
 else
   echo "\033[90mdocs unchanged — skipping checks \033[0m"
 fi
+if files_changed '^logic/\|^cross/'; then
+    append_checks "$REPO_ROOT/scripts/pre-commit-checks/rust.sh"
+else
+  echo "\033[90mrust unchanged — skipping checks \033[0m"
+fi
 
 CHECKS=$(echo "$CHECKS" | sed 's/ &&$//')
 

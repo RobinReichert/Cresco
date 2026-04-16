@@ -28,7 +28,7 @@ and issues makes the codebase easier to navigate and maintain.
 Follow the standard Rust style enforced by `rustfmt`. Run it before every commit:
 
 ```bash
-cargo fmt
+./cresco.sh format
 ```
 
 ### General Rules

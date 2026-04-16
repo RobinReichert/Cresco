@@ -18,14 +18,6 @@ Clone the repository:
 git clone https://github.com/RobinReichert/Cresco.git
 ```
 
-## Quick start
-
-Run the setup script from the project root:
-
-```bash
-./cresco.sh setup
-```
-
 ## Documentation
 
 Full documentation is available at [RobinReichert.github.io/Cresco](https://robinreichert.github.io/Cresco).

@@ -13,6 +13,7 @@ use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println as _;
+use logic;
 
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
@@ -53,7 +54,7 @@ async fn main(spawner: Spawner) -> ! {
     let _ = spawner;
 
     loop {
-        info!("Hello World!");
+        info!("Hello World: {}!", logic::add(1, 2));
         Timer::after(Duration::from_secs(1)).await;
     }
 

@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docs_changed: ${{ steps.docs_check.outputs.changed }}
+      rust_changed: ${{ steps.rust_check.outputs.changed }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -25,8 +26,10 @@ jobs:
 
       - id: docs_check 
         run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
+      - id: rust_check
+        run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
 
-  lint:
+  lint-docs:
     needs: detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
@@ -45,9 +48,8 @@ jobs:
       - name: Lint Markdown
         run: npx markdownlint --config docs/config/.markdownlint.yml "docs/**/*.md"
 
-  build:
+  build-docs:
     needs: 
-      - lint
       - detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
@@ -67,3 +69,48 @@ jobs:
         run: bundle exec jekyll build --destination ../_site --config config/_config.yml
         env:
           BUNDLE_GEMFILE: ./config/Gemfile
+
+  fmt-rust:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check formatting
+        run: cargo fmt --check
+
+  test-rust:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Test logic
+        run: cargo test -p logic
+
+  check-rust:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            build/app_embedded 
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Run cargo check
+        working-directory: ./cross
+        run: cargo check --release
+        env:
+          CARGO_TERM_COLOR: always
+          CARGO_TARGET_DIR: build/app_embedded
+

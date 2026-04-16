@@ -12,7 +12,6 @@ rustflags = [
 ]
 
 target = "riscv32imc-unknown-none-elf"
-target-dir = "../build/app_embedded"
 
 [unstable]
 build-std = ["alloc", "core"]

@@ -97,6 +97,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install target
+        run: rustup target add riscv32imc-unknown-none-elf
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:

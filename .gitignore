@@ -14,5 +14,8 @@ docs/config/Gemfile.lock
 docs/.jekyll-cache
 docs/.sass-cache
 
+# drawio diagrams are build in ci
+docs/assets/drawio
+
 # Files created by mac_os
 .DS_STORE

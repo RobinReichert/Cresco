@@ -58,8 +58,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Export Drawio diagrams
-        working-directory: ./docs
         uses: rlespinasse/drawio-export-action@v2
+        working-directory: ./docs
         with:
           path: drawio
           format: svg

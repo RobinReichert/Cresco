@@ -6,11 +6,11 @@ use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Runner, Stack, StackResources, StaticConfigV4};
 use embassy_time::{Duration, Timer};
 use esp_hal::rng::Rng;
+use esp_println as _;
 use esp_radio::wifi::{
     AccessPointConfig, ModeConfig, WifiApState, WifiController, WifiDevice, WifiEvent,
 };
 use logic::config::{self, SERVER_IP};
-use esp_println as _;
 
 use crate::{dhcp, mk_static};
 
@@ -67,10 +67,8 @@ async fn connection(mut controller: WifiController<'static>) {
         }
 
         if !matches!(controller.is_started(), Ok(true)) {
-            let client_config = ModeConfig::AccessPoint(
-                AccessPointConfig::default()
-                    .with_ssid(SSID.into()),
-            );
+            let client_config =
+                ModeConfig::AccessPoint(AccessPointConfig::default().with_ssid(SSID.into()));
             controller.set_config(&client_config).unwrap();
             info!("Starting wifi");
             controller.start_async().await.unwrap();

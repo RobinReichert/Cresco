@@ -1,7 +1,7 @@
 #![no_std]
 
-pub mod wifi;
 pub mod dhcp;
+pub mod wifi;
 
 #[macro_export]
 macro_rules! mk_static {

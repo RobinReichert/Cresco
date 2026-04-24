@@ -34,10 +34,9 @@ jobs:
       - name: Export Drawio diagrams
         uses: rlespinasse/drawio-export-action@v2
         with:
-          working-directory: ./docs
-          path: /drawio
+          path: docs/drawio
           format: svg
-          output: /assets/drawio
+          output: ../assets/drawio
           remove-page-suffix: true
           action-mode: all
       - name: Setup Pages

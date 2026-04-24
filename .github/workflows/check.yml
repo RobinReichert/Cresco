@@ -57,6 +57,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Export Drawio diagrams
+        working-directory: ./docs
+        uses: rlespinasse/drawio-export-action@v2
+        with:
+          path: drawio
+          format: svg
+          output: assets/drawio
+          remove-page-suffix: true
+          action-mode: all
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:

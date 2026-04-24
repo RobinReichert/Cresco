@@ -1,5 +1,13 @@
 # docker/docker-compose-docs-server.yml
 services:
+  drawio-export:
+    container_name: drawio-export
+    image: rlespinasse/drawio-export:latest
+    working_dir: /app/drawio
+    volumes:
+      - ../docs:/app
+    command: --output /app/assets/drawio --format svg --remove-page-suffix
+
   docs-server:
     container_name: docs-server
     build:

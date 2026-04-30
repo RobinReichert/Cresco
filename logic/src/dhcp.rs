@@ -17,6 +17,7 @@ pub trait DhcpServer {
 
 pub mod simple {
 
+    use heapless::Vec;
     use smoltcp::wire::DhcpMessageType;
 
     use crate::config::{CLIENT_IP, LEASE_DURATION, SERVER_IP, SUBNET_MASK};
@@ -103,6 +104,10 @@ pub mod simple {
     }
 
     fn new_repr(message_type: DhcpMessageType, response_to: DhcpRepr) -> DhcpRepr {
+        let mut dns_servers = Vec::new();
+        dns_servers
+            .push(SERVER_IP)
+            .expect("could not push server ip as dns");
         DhcpRepr {
             message_type: message_type,
             transaction_id: response_to.transaction_id,
@@ -123,7 +128,7 @@ pub mod simple {
             lease_duration: Some(LEASE_DURATION),
             renew_duration: None,
             rebind_duration: None,
-            dns_servers: None,
+            dns_servers: Some(dns_servers),
             additional_options: &[],
         }
     }
@@ -184,7 +189,7 @@ pub mod simple {
             mac: mac_array,
             timestamp: time,
         };
-        info!("received request. sending ack");
+        info!("received request. sending ack: {:?}", ack);
         (action, new_state)
     }
 

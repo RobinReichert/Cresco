@@ -1,6 +1,3 @@
-use core::net::Ipv4Addr;
-use core::str::FromStr;
-
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Runner, Stack, StackResources, StaticConfigV4};
@@ -10,9 +7,9 @@ use esp_println as _;
 use esp_radio::wifi::{
     AccessPointConfig, ModeConfig, WifiApState, WifiController, WifiDevice, WifiEvent,
 };
-use logic::config::{self, SERVER_IP};
+use logic::config::SERVER_IP;
 
-use crate::{dhcp, mk_static};
+use crate::{dhcp, dns, mk_static};
 
 const SSID: &str = "Cresco";
 
@@ -40,12 +37,13 @@ pub async fn start_wifi(
     let (stack, runner) = embassy_net::new(
         wifi_interface,
         net_config,
-        mk_static!(StackResources<3>, StackResources::<3>::new()),
+        mk_static!(StackResources<4>, StackResources::<4>::new()),
         net_seed,
     );
     spawner.spawn(net_task(runner)).ok();
     spawner.spawn(connection(wifi_controller)).ok();
     spawner.spawn(dhcp::dhcp_task(stack)).ok();
+    spawner.spawn(dns::dns_task(stack)).ok();
 
     wait_for_connection(stack).await;
 

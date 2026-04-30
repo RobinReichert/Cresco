@@ -1,6 +1,7 @@
 #![no_std]
 
 pub mod dhcp;
+pub mod dns;
 pub mod wifi;
 
 #[macro_export]

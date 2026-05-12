@@ -83,9 +83,17 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install nightly
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Check formatting
         run: cargo fmt --check
 
@@ -93,9 +101,17 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install nightly
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Test logic
         run: cargo test -p logic
 
@@ -103,9 +119,17 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install nightly
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Install target
         run: rustup target add riscv32imc-unknown-none-elf
       - name: Cache cargo registry

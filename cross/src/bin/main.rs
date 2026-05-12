@@ -69,6 +69,5 @@ async fn main(spawner: Spawner) -> ! {
 
     loop {
         Timer::after(Duration::from_secs(1)).await;
-        info!("testing");
     }
 }

@@ -7,6 +7,13 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
+use cross::{
+    dhcp::dhcp_task,
+    dns::dns_task,
+    mk_static,
+    web::{self, captive_app::CaptiveApp},
+    wifi,
+};
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -14,7 +21,7 @@ use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println as _;
-use logic;
+use picoserve::{AppBuilder, AppRouter};
 
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
@@ -43,13 +50,23 @@ async fn main(spawner: Spawner) -> ! {
 
     info!("Embassy initialized!");
 
-    let radio_init = &*cross::mk_static!(
+    let radio_init = &*mk_static!(
         esp_radio::Controller<'static>,
         esp_radio::init().expect("Failed to initialize Wi-Fi/BLE controller")
     );
     let rng = Rng::new();
 
-    let stack = cross::wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
+    let stack = wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
+
+    spawner.spawn(dhcp_task(stack)).ok();
+    spawner.spawn(dns_task(stack)).ok();
+
+    let captive_app = mk_static!(AppRouter<CaptiveApp>, CaptiveApp.build_app());
+
+    for task_id in 0..web::WEB_TASK_POOL_SIZE {
+        spawner.must_spawn(web::web_task(task_id, stack, captive_app));
+    }
+
     loop {
         Timer::after(Duration::from_secs(1)).await;
     }

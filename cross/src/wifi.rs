@@ -9,7 +9,7 @@ use esp_radio::wifi::{
 };
 use logic::config::SERVER_IP;
 
-use crate::{dhcp, dns, mk_static};
+use crate::mk_static;
 
 const SSID: &str = "Cresco";
 
@@ -37,13 +37,11 @@ pub async fn start_wifi(
     let (stack, runner) = embassy_net::new(
         wifi_interface,
         net_config,
-        mk_static!(StackResources<4>, StackResources::<4>::new()),
+        mk_static!(StackResources<6>, StackResources::<6>::new()),
         net_seed,
     );
     spawner.spawn(net_task(runner)).ok();
     spawner.spawn(connection(wifi_controller)).ok();
-    spawner.spawn(dhcp::dhcp_task(stack)).ok();
-    spawner.spawn(dns::dns_task(stack)).ok();
 
     wait_for_connection(stack).await;
 

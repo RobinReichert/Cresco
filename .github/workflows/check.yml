@@ -103,7 +103,6 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
-    strategy:
     steps:
       - name: Checkout
         uses: actions/checkout@v4

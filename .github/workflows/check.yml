@@ -92,8 +92,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install nightly
-        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Install target
+        run: |
+          rustup toolchain install nightly
+          rustup default nightly
       - name: Check formatting
         run: cargo fmt --check
 
@@ -102,16 +104,13 @@ jobs:
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        toolchain:
-          - stable
-          - beta
-          - nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install nightly
-        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Install target
+        run: |
+          rustup toolchain install nightly
+          rustup default nightly
       - name: Test logic
         run: cargo test -p logic
 
@@ -120,18 +119,17 @@ jobs:
     if: needs.detect-changes.outputs.rust_changed == 'true'
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        toolchain:
-          - stable
-          - beta
-          - nightly
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install nightly
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Install target
-        run: rustup target add riscv32imc-unknown-none-elf
+        run: |
+          rustup toolchain install nightly
+          rustup default nightly
+          rustup target add riscv32imc-unknown-none-elf
+          rustup component add rust-src      
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:

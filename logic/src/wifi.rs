@@ -23,7 +23,7 @@ pub enum WifiEvent {
     Timeout,
 }
 
-pub trait WifiControl {
+pub trait WifiManager {
     fn handle_event(&mut self, event: WifiEvent) -> WifiAction;
 }
 
@@ -43,11 +43,11 @@ pub mod simple {
         Connected,
     }
 
-    pub struct SimpleWifiControl {
+    pub struct SimpleWifiManager {
         state: SimpleWifiState,
     }
 
-    impl WifiControl for SimpleWifiControl {
+    impl WifiManager for SimpleWifiManager {
         fn handle_event(&mut self, event: WifiEvent) -> WifiAction {
             match (&self.state, event) {
                 (SimpleWifiState::RetrievingCredentials, WifiEvent::CredentialsMissing) => {
@@ -118,7 +118,7 @@ pub mod simple {
         }
     }
 
-    impl SimpleWifiControl {
+    impl SimpleWifiManager {
         pub fn new() -> Self {
             Self {
                 state: SimpleWifiState::RetrievingCredentials,
@@ -134,7 +134,7 @@ pub mod simple {
 
         #[test]
         fn test_credentials_missing_should_wait_for_credentials() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::RetrievingCredentials,
             };
             let action = c.handle_event(WifiEvent::CredentialsMissing);
@@ -143,7 +143,7 @@ pub mod simple {
 
         #[test]
         fn test_credentials_found_should_start_client() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::RetrievingCredentials,
             };
             let credentials = LoginData {
@@ -158,7 +158,7 @@ pub mod simple {
 
         #[test]
         fn test_credentials_received_should_start_client() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::WaitingForCredentials,
             };
             let credentials = LoginData {
@@ -173,7 +173,7 @@ pub mod simple {
 
         #[test]
         fn test_timeout_on_wait_for_credentials_should_check_credentials() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::WaitingForCredentials,
             };
             let action = c.handle_event(WifiEvent::Timeout);
@@ -186,7 +186,7 @@ pub mod simple {
                 ssid: String::new(),
                 password: String::new(),
             };
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::EstablishingConnection {
                     retries: 0,
                     credentials: credentials.clone(),
@@ -202,7 +202,7 @@ pub mod simple {
                 ssid: String::new(),
                 password: String::new(),
             };
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::EstablishingConnection {
                     retries: 0,
                     credentials: credentials.clone(),
@@ -223,7 +223,7 @@ pub mod simple {
                 ssid: String::new(),
                 password: String::new(),
             };
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::EstablishingConnection {
                     retries: 4,
                     credentials: credentials.clone(),
@@ -235,7 +235,7 @@ pub mod simple {
 
         #[test]
         fn test_disconnect_should_retrieve_credentials() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::Connected,
             };
             let action = c.handle_event(WifiEvent::Disconnected);
@@ -244,7 +244,7 @@ pub mod simple {
 
         #[test]
         fn test_invalid_event_on_retrieve_credentials_should_ignore() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::RetrievingCredentials,
             };
             let action = c.handle_event(WifiEvent::Disconnected);
@@ -253,7 +253,7 @@ pub mod simple {
 
         #[test]
         fn test_invalid_event_on_ap_sta_started_should_ignore() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::WaitingForCredentials,
             };
             let action = c.handle_event(WifiEvent::Disconnected);
@@ -266,7 +266,7 @@ pub mod simple {
                 ssid: String::new(),
                 password: String::new(),
             };
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::EstablishingConnection {
                     retries: 0,
                     credentials,
@@ -278,7 +278,7 @@ pub mod simple {
 
         #[test]
         fn test_invalid_event_on_connected_should_ignore() {
-            let mut c = SimpleWifiControl {
+            let mut c = SimpleWifiManager {
                 state: SimpleWifiState::Connected,
             };
             let action = c.handle_event(WifiEvent::ConnectionEstablished);

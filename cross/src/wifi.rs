@@ -15,7 +15,7 @@ use esp_radio::wifi::{
 use heapless::String;
 use logic::{
     config::SERVER_IP,
-    wifi::{LoginData, WifiControl, simple::SimpleWifiControl},
+    wifi::{LoginData, WifiManager, simple::SimpleWifiManager},
 };
 
 use crate::{
@@ -66,7 +66,7 @@ pub async fn connection(
     ssids: &'static Mutex<CriticalSectionRawMutex, SsidsList>,
     credentials: &'static Signal<CriticalSectionRawMutex, LoginData>,
 ) {
-    let mut c = SimpleWifiControl::new();
+    let mut c = SimpleWifiManager::new();
     let mut event: Option<logic::wifi::WifiEvent> =
         Some(logic::wifi::WifiEvent::CredentialsMissing);
     loop {

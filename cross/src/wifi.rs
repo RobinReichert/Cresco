@@ -75,7 +75,7 @@ pub async fn connection(
                 info!("retrieving credentials");
                 event = Some(logic::wifi::WifiEvent::CredentialsMissing);
             }
-            logic::wifi::WifiAction::StartWifiApSta => {
+            logic::wifi::WifiAction::WaitForCredentials => {
                 info!("starting ap sta");
                 controller.stop_async().await;
                 let config = ModeConfig::ApSta(
@@ -124,7 +124,7 @@ pub async fn connection(
                     }
                 }
             }
-            logic::wifi::WifiAction::StartWifiClient { credentials } => {
+            logic::wifi::WifiAction::EstablishConnection { credentials } => {
                 info!("starting client");
                 let LoginData { ssid, password } = credentials;
                 controller.stop_async().await.unwrap();
@@ -139,12 +139,12 @@ pub async fn connection(
                 match sta_state() {
                     WifiStaState::Connected => {
                         info!("connected");
-                        event = Some(logic::wifi::WifiEvent::Connected);
+                        event = Some(logic::wifi::WifiEvent::ConnectionEstablished);
                         //TODO store credentials
                     }
                     _ => {
                         info!("failed client connection");
-                        event = Some(logic::wifi::WifiEvent::NotConnected);
+                        event = Some(logic::wifi::WifiEvent::ConnectionNotEstablished);
                         Timer::after_secs(3).await;
                     }
                 }

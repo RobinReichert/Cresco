@@ -62,7 +62,7 @@ case "$1" in
         cargo fmt
         ;;
     test)
-        cargo test -p logic 
+        cargo test -p logic
         ;;
     build_app_embedded)
         cd cross

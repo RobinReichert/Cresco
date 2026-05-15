@@ -68,7 +68,7 @@ pub async fn connection(
     let mut event: Option<logic::wifi::WifiEvent> =
         Some(logic::wifi::WifiEvent::CredentialsMissing);
     loop {
-        match c.handle_event(event.take().unwrap()) {
+        match c.handle_event(event.take().expect("no event: this should not happen")) {
             logic::wifi::WifiAction::RetrieveCredentials => {
                 info!("retrieving credentials");
                 event = Some(logic::wifi::WifiEvent::CredentialsMissing);
@@ -80,8 +80,8 @@ pub async fn connection(
                     ClientConfig::default(),
                     AccessPointConfig::default().with_ssid(SSID.into()),
                 );
-                controller.set_config(&config).unwrap();
-                controller.start_async().await.unwrap();
+                let _ = controller.set_config(&config);
+                let _ = controller.start_async().await;
                 let deadline = Instant::now() + Duration::from_secs(60);
                 loop {
                     let timeout = Timer::at(deadline);
@@ -125,14 +125,14 @@ pub async fn connection(
             logic::wifi::WifiAction::EstablishConnection { credentials } => {
                 info!("starting client");
                 let LoginData { ssid, password } = credentials;
-                controller.stop_async().await.unwrap();
+                let _ = controller.stop_async().await;
                 let config = ModeConfig::Client(
                     ClientConfig::default()
                         .with_ssid(ssid.as_str().into())
                         .with_password(password.as_str().into()),
                 );
-                controller.set_config(&config).unwrap();
-                controller.start_async().await.unwrap();
+                let _ = controller.set_config(&config);
+                let _ = controller.start_async().await;
                 select(controller.connect_async(), Timer::after_secs(5)).await;
                 match sta_state() {
                     WifiStaState::Connected => {

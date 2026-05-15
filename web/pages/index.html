@@ -50,21 +50,47 @@
 </head>
 <body>
 
-<div class="login-card">
-    <h2>Network Login</h2>
-    <form action="/login" method="POST">
-        <div class="input-group">
-            <label for="ssid">Network Name (SSID)</label>
-            <input type="text" id="ssid" name="ssid" placeholder="Enter WiFi Name" required>
+        <div class="login-card">
+            <h2>Network Login</h2>
+            <form action="/login" method="POST">
+                <div class="input-group">
+                    <label for="ssid">Network Name (SSID)</label>
+                    <select id="ssid" name="ssid" required>
+                        <option value="" disabled selected>Loading networks…</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter Password" required>
+                </div>
+                <button type="submit">Connect</button>
+            </form>
+            <p class="footer-text">Credentials are only sent to this device</p>
         </div>
-        <div class="input-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter Password" required>
-        </div>
-        <button type="submit">Connect</button>
-    </form>
-    <p class="footer-text">Credentials are only sent to this device</p>
-</div>
-
-</body>
+        <script>
+        function loadSsids() { 
+            fetch('/ssids')
+                .then(r => r.json())
+                .then(response => {
+                    const sel = document.getElementById('ssid');
+                    if (!sel.value) {
+                        sel.innerHTML = '<option value="" disabled selected>Select a network</option>';
+                        response.ssids.forEach(s => {
+                            const name = typeof s === 'string' ? s : s.ssid;
+                            const opt = document.createElement('option');
+                            opt.value = name;
+                            opt.textContent = name;
+                            sel.appendChild(opt);
+                        });
+                    }
+                })
+                .catch(() => {
+                    const sel = document.getElementById('ssid');
+                    sel.innerHTML = '<option value="" disabled selected>Could not load networks</option>';
+                });
+        }
+        loadSsids();
+        setInterval(loadSsids, 5000);
+        </script>
+    </body>
 </html>

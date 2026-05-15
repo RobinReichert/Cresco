@@ -11,16 +11,19 @@ use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
     mk_static,
-    web::{self, captive_app::CaptiveApp},
-    wifi,
+    web::{self, captive_app::CaptiveApp, services::captive_ssids::SsidsList},
+    wifi::{self, connection},
 };
 use defmt::info;
 use embassy_executor::Spawner;
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, signal::Signal};
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println as _;
+use heapless::{String, Vec};
+use logic::wifi::LoginData;
 use picoserve::{AppBuilder, AppRouter};
 
 #[panic_handler]
@@ -56,15 +59,33 @@ async fn main(spawner: Spawner) -> ! {
     );
     let rng = Rng::new();
 
-    let stack = wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
+    let (wifi_controller, ap_stack, sta_stack) =
+        wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
 
-    spawner.spawn(dhcp_task(stack)).ok();
-    spawner.spawn(dns_task(stack)).ok();
+    let ssids: Mutex<CriticalSectionRawMutex, SsidsList> = Mutex::new(Vec::new());
+    let ssids: &'static _ = mk_static!(Mutex<CriticalSectionRawMutex, SsidsList>, ssids);
+    let credentials: Signal<CriticalSectionRawMutex, LoginData> = Signal::new();
+    let credentials: &'static _ =
+        mk_static!(Signal<CriticalSectionRawMutex, LoginData>, credentials);
 
-    let captive_app = mk_static!(AppRouter<CaptiveApp>, CaptiveApp.build_app());
+    spawner
+        .spawn(connection(wifi_controller, &ssids, &credentials))
+        .ok();
+
+    spawner.spawn(dhcp_task(ap_stack)).ok();
+    spawner.spawn(dns_task(ap_stack)).ok();
+
+    let captive_app = mk_static!(
+        AppRouter<CaptiveApp>,
+        CaptiveApp {
+            ssids: &ssids,
+            credentials: &credentials
+        }
+        .build_app()
+    );
 
     for task_id in 0..web::WEB_TASK_POOL_SIZE {
-        spawner.must_spawn(web::web_task(task_id, stack, captive_app));
+        spawner.must_spawn(web::web_task(task_id, ap_stack, captive_app));
     }
 
     loop {

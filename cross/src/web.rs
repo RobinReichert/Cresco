@@ -21,7 +21,7 @@ static CONFIG: Config<Duration> = Config::new(Timeouts {
 pub async fn web_task(
     task_id: usize,
     stack: embassy_net::Stack<'static>,
-    app: &'static AppRouter<CaptiveApp>,
+    app: &'static AppRouter<CaptiveApp<'static>>,
 ) {
     let mut tcp_rx_buffer = [0; 1024];
     let mut tcp_tx_buffer = [0; 1024];

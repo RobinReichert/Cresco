@@ -1,19 +1,18 @@
 use defmt::info;
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
+use heapless::String;
+use logic::wifi::LoginData;
 use picoserve::{
     extract::{Form, FromRequest},
     response::{Response, StatusCode},
     routing::RequestHandlerService,
 };
 
-#[derive(serde::Deserialize)]
-struct LoginData {
-    ssid: heapless::String<32>,
-    password: heapless::String<32>,
+pub struct CaptiveLogin<'a> {
+    pub credentials: &'a Signal<CriticalSectionRawMutex, LoginData>,
 }
 
-pub struct CaptiveLogin;
-
-impl<State> RequestHandlerService<State> for CaptiveLogin {
+impl<State> RequestHandlerService<State> for CaptiveLogin<'_> {
     async fn call_request_handler_service<
         R: picoserve::io::Read,
         W: picoserve::response::ResponseWriter<Error = R::Error>,
@@ -32,8 +31,8 @@ impl<State> RequestHandlerService<State> for CaptiveLogin {
         .await
         {
             Ok(Form(data)) => {
-                info!("ssid: {}", data.ssid);
-                (StatusCode::OK, "Ok")
+                let credentials_guard = self.credentials.signal(data);
+                (StatusCode::OK, "")
             }
             Err(_) => (StatusCode::BAD_REQUEST, "Failed to decode body"),
         };

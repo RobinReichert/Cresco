@@ -1,6 +1,4 @@
-use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
-use heapless::String;
 use logic::wifi::LoginData;
 use picoserve::{
     extract::{Form, FromRequest},
@@ -31,7 +29,7 @@ impl<State> RequestHandlerService<State> for CaptiveLogin<'_> {
         .await
         {
             Ok(Form(data)) => {
-                let credentials_guard = self.credentials.signal(data);
+                self.credentials.signal(data);
                 (StatusCode::OK, "")
             }
             Err(_) => (StatusCode::BAD_REQUEST, "Failed to decode body"),

@@ -1,11 +1,6 @@
-use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use heapless::{String, Vec};
-use picoserve::{
-    extract::{Form, FromRequest},
-    response::{IntoResponse, Json, StatusCode},
-    routing::RequestHandlerService,
-};
+use picoserve::{response::Json, routing::RequestHandlerService};
 
 const MAX_SSID_LENGTH: usize = 32;
 pub const MAX_SSID_COUNT: usize = 5;
@@ -29,7 +24,7 @@ impl<State> RequestHandlerService<State> for CaptiveSsids<'_> {
         &self,
         _state: &State,
         _path_parameters: (),
-        mut request: picoserve::request::Request<'_, R>,
+        request: picoserve::request::Request<'_, R>,
         response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
         let ssids = self.ssids.lock().await.clone();

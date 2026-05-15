@@ -1,5 +1,3 @@
-use core::pin::pin;
-
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_futures::select::{Either3, select, select3};
@@ -9,8 +7,8 @@ use embassy_time::{Duration, Instant, Timer};
 use esp_hal::rng::Rng;
 use esp_println as _;
 use esp_radio::wifi::{
-    AccessPointConfig, ClientConfig, ModeConfig, ScanConfig, WifiApState, WifiController,
-    WifiDevice, WifiEvent, WifiStaState, sta_state,
+    AccessPointConfig, ClientConfig, ModeConfig, ScanConfig, WifiController, WifiDevice, WifiEvent,
+    WifiStaState, sta_state,
 };
 use heapless::String;
 use logic::{
@@ -77,7 +75,7 @@ pub async fn connection(
             }
             logic::wifi::WifiAction::WaitForCredentials => {
                 info!("starting ap sta");
-                controller.stop_async().await;
+                let _ = controller.stop_async().await;
                 let config = ModeConfig::ApSta(
                     ClientConfig::default(),
                     AccessPointConfig::default().with_ssid(SSID.into()),
@@ -108,7 +106,7 @@ pub async fn connection(
                                         && distinct_ssid_count < MAX_SSID_COUNT
                                     {
                                         if !list.contains(&s) {
-                                            list.push(s);
+                                            let _ = list.push(s);
                                             distinct_ssid_count += 1;
                                         }
                                     }

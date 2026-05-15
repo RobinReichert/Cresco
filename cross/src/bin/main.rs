@@ -22,7 +22,7 @@ use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println as _;
-use heapless::{String, Vec};
+use heapless::Vec;
 use logic::wifi::LoginData;
 use picoserve::{AppBuilder, AppRouter};
 
@@ -59,7 +59,7 @@ async fn main(spawner: Spawner) -> ! {
     );
     let rng = Rng::new();
 
-    let (wifi_controller, ap_stack, sta_stack) =
+    let (wifi_controller, ap_stack, _sta_stack) =
         wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
 
     let ssids: Mutex<CriticalSectionRawMutex, SsidsList> = Mutex::new(Vec::new());

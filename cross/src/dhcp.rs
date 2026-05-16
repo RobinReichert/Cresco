@@ -1,4 +1,3 @@
-use defmt::info;
 use embassy_net::{Stack, udp::PacketMetadata, udp::UdpSocket};
 use embassy_time::Instant;
 use esp_println as _;
@@ -24,7 +23,6 @@ pub async fn dhcp_task(stack: Stack<'static>) {
     socket.bind(67).expect("DHCP bind failed");
 
     let mut in_buf = [0u8; 1024];
-    let mut out_buf = [0u8; 576];
 
     loop {
         if let Ok((n, _)) = socket.recv_from(&mut in_buf).await {

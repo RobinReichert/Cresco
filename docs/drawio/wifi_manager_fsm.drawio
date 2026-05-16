@@ -1,0 +1,98 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="6hNGUgFV8K_bO84fdbcP">
+    <mxGraphModel dx="2174" dy="754" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-2" parent="1" style="ellipse;html=1;shape=startState;fillColor=#000000;strokeColor=#ff0000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="-30" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-3" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-2" style="edgeStyle=orthogonalEdgeStyle;html=1;verticalAlign=bottom;endArrow=open;endSize=8;strokeColor=#ff0000;rounded=0;" target="gA5VcP6dLAY_Uu09TsAU-11" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+            <mxPoint x="190" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-4" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;" value="Wait for Credentials" vertex="1">
+          <mxGeometry height="40" width="140" x="67.5" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-19" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-25" value="Found">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="376.25" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-11" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;" value="Retrieve Credentials" vertex="1">
+          <mxGeometry height="40" width="140" x="67.5" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-20" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="gA5VcP6dLAY_Uu09TsAU-4" value="Missing">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="135" y="180" as="sourcePoint" />
+            <mxPoint x="137.5" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-29" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-4" value="Not Connected N times">
+          <mxGeometry relative="1" x="-0.0855" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="170" y="225" />
+            </Array>
+            <mxPoint x="239.99999999999955" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-25" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;" value="Establish Connection" vertex="1">
+          <mxGeometry height="40" width="140" x="290" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-27" parent="1" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;whiteSpace=wrap;" value="Connected" vertex="1">
+          <mxGeometry height="30" width="70" x="490" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-30" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-27" value="Established Connection">
+          <mxGeometry relative="1" x="0.0095" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+            <mxPoint x="394.5344827586209" y="290.0000000000001" as="sourcePoint" />
+            <mxPoint x="569.5" y="355" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-33" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-25" value="Received">
+          <mxGeometry relative="1" x="-0.2247" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="370" y="290" />
+            </Array>
+            <mxPoint x="78.76190476190459" y="390" as="sourcePoint" />
+            <mxPoint x="-40" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-40" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-11" value="Disconnect">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="525" y="80" />
+              <mxPoint x="130" y="80" />
+            </Array>
+            <mxPoint x="585" y="255" as="sourcePoint" />
+            <mxPoint x="585" y="305" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-41" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="gA5VcP6dLAY_Uu09TsAU-11" value="Timeout">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="90" y="250" />
+              <mxPoint x="90" y="250" />
+            </Array>
+            <mxPoint x="29.999999999999545" y="350" as="sourcePoint" />
+            <mxPoint x="-50" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-44" parent="1" style="dashed=0;html=1;rounded=1;strokeColor=#DFE1E6;fontSize=12;align=center;fontStyle=1;strokeWidth=2;fontColor=#42526E" value="Periodically scan Ssids" vertex="1">
+          <mxGeometry height="20" width="70" x="-20" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-45" parent="1" style="dashed=0;html=1;rounded=1;fillColor=#DFE1E6;strokeColor=#DFE1E6;fontSize=12;align=center;fontStyle=1;strokeWidth=2;fontColor=#42526E" value="Retries" vertex="1">
+          <mxGeometry height="20" width="70" x="379" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-46" parent="1" style="dashed=0;html=1;rounded=1;strokeColor=#DFE1E6;fontSize=12;align=center;fontStyle=1;strokeWidth=2;fontColor=#42526E" value="Save Credentials" vertex="1">
+          <mxGeometry height="20" width="70" x="430" y="115" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

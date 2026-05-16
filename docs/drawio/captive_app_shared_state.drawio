@@ -1,0 +1,26 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="6hNGUgFV8K_bO84fdbcP">
+    <mxGraphModel dx="1047" dy="587" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-50" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-48" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;" target="gA5VcP6dLAY_Uu09TsAU-49" value="Share&amp;nbsp;&lt;span style=&quot;color: rgb(0, 153, 0);&quot;&gt;credentials&lt;/span&gt;">
+          <mxGeometry relative="1" x="-0.0007" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-48" parent="1" style="shape=ellipse;html=1;dashed=0;whiteSpace=wrap;aspect=fixed;perimeter=ellipsePerimeter;" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Captive App&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="60" x="200" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-51" edge="1" parent="1" source="gA5VcP6dLAY_Uu09TsAU-49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;" target="gA5VcP6dLAY_Uu09TsAU-48" value="Share available &lt;span style=&quot;color: rgb(0, 153, 0);&quot;&gt;ssids&lt;/span&gt;">
+          <mxGeometry relative="1" x="0.0003" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gA5VcP6dLAY_Uu09TsAU-49" parent="1" style="shape=ellipse;html=1;dashed=0;whiteSpace=wrap;aspect=fixed;perimeter=ellipsePerimeter;" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Wifi Connection&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="60" x="360" y="190" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

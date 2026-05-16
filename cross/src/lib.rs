@@ -1,7 +1,9 @@
 #![no_std]
+#![feature(impl_trait_in_assoc_type)]
 
 pub mod dhcp;
 pub mod dns;
+pub mod web;
 pub mod wifi;
 
 #[macro_export]

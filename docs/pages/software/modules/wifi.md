@@ -37,8 +37,8 @@ The built-in `SimpleWifiManager` moves through four states:
 | State | Meaning |
 | --- | --- |
 | `RetrievingCredentials` | Checking storage for saved WiFi credentials |
-| `WifiApStaStarted` | Running a portal to collect credentials from the user |
-| `WifiClientStarted` | Attempting to connect to an access point |
+| `WaitingForCredentials` | Running a portal to collect credentials |
+| `EstablishingConnection` | Attempting to connect to an access point |
 | `Connected` | Successfully connected; waiting for a disconnect event |
 
 ### State Diagram
@@ -54,8 +54,8 @@ Events are produced by the driver and fed into the manager via `handle_event`.
 | `CredentialsMissing` | No stored credentials were found at startup |
 | `CredentialsFound` | Stored credentials were successfully loaded |
 | `CredentialsReceived` | User submitted credentials via the captive portal |
-| `Connected` | The station successfully associated with an AP |
-| `NotConnected` | A connection attempt timed out or was refused |
+| `ConnectionEstablished` | The station successfully associated with an AP |
+| `ConnectionNotEstablished` | A connection attempt timed out or was refused |
 | `Disconnected` | The station lost an existing connection |
 | `Timeout` | The captive portal window expired without receiving credentials |
 
@@ -67,8 +67,8 @@ Actions are returned by `handle_event` and tell the driver what to do next.
 | --- | --- |
 | `Ignore` | The event was not valid in the current state; do nothing |
 | `RetrieveCredentials` | Load credentials from persistent storage |
-| `StartWifiApSta` | Start AP+STA mode and open the captive portal |
-| `StartWifiClient` | Connect to the given SSID with the given password |
+| `WaitForCredentials` | Start AP+STA mode and open the captive portal |
+| `EstablishConnection` | Connect to the given SSID with the given password |
 | `WaitForDisconnect` | Connection is up; block until a disconnect event |
 
 ### `WifiManager` trait

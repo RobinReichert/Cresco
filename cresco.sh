@@ -49,13 +49,8 @@ case "$1" in
         docker compose -f docker/docker-compose-docs-server.yml run --rm --service-ports docs-server
         ;;
     setup)
-        if cmp -s scripts/pre-commit .git/hooks/pre-commit; then
-            echo "Pre-commit hook already up to date"
-        else
-            cp scripts/pre-commit .git/hooks/pre-commit
-            chmod +x .git/hooks/pre-commit
-            echo "Pre-commit hook installed/updated!"
-        fi
+        uv sync
+        uv run pre-commit install
         docker pull rlespinasse/drawio-export
         ;;
     format)

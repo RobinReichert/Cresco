@@ -43,9 +43,9 @@ body:
       required: true
 
   - type: textarea
-    id: ideas 
+    id: ideas
     attributes:
-      label: Ideas 
+      label: Ideas
       description: Do you have any ideas why?
       placeholder: Explain why this could be happening
     validations:

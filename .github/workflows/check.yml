@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - id: docs_check 
+      - id: docs_check
         run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
       - id: rust_check
         run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
@@ -49,7 +49,7 @@ jobs:
         run: npx markdownlint --config docs/config/.markdownlint.yml "docs/**/*.md"
 
   build-docs:
-    needs: 
+    needs:
       - detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
@@ -120,14 +120,14 @@ jobs:
           rustup toolchain install nightly
           rustup default nightly
           rustup target add riscv32imc-unknown-none-elf
-          rustup component add rust-src      
+          rustup component add rust-src
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            build/app_embedded 
+            build/app_embedded
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -137,4 +137,3 @@ jobs:
         env:
           CARGO_TERM_COLOR: always
           CARGO_TARGET_DIR: build/app_embedded
-

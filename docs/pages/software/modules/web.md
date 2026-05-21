@@ -1,5 +1,5 @@
 ---
-title: Web 
+title: Web
 layout: default
 parent: Modules
 nav_order: 4

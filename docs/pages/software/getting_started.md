@@ -1,5 +1,5 @@
 ---
-title: Getting Started 
+title: Getting Started
 layout: default
 parent: Software
 nav_order: 1
@@ -36,6 +36,18 @@ and install `probe-rs` for flashing.
 {: .tip}
 > Although mainly used to set up the project, installing esp-generate may also
 > prove useful if you plan to change the project's configuration later on.
+
+### 4. Install uv
+
+If you already have Cargo installed, you can install uv with:
+
+```bash
+cargo install uv
+```
+
+Otherwise follow
+the [official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
+for your platform.
 
 ---
 

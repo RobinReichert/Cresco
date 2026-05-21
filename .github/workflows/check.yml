@@ -29,6 +29,15 @@ jobs:
       - id: rust_check
         run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
 
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run trailing-whitespace --all-files
+      - run: uv run pre-commit run end-of-file-fixer --all-files
+      - run: uv run pre-commit run mixed-line-ending --all-files
   lint-docs:
     needs: detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
@@ -36,17 +45,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Node dependencies
-        run: npm install markdownlint-cli
-
       - name: Lint Markdown
-        run: npx markdownlint --config docs/config/.markdownlint.yml "docs/**/*.md"
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run markdownlint --all-files
 
   build-docs:
     needs:
@@ -86,13 +88,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install nightly
-        run: |
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup component add rustfmt
-      - name: Check formatting
-        run: cargo fmt --check
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run cargo-fmt --all-files
 
   test-rust:
     needs: detect-changes

@@ -21,10 +21,12 @@ jobs:
       rust_changed: ${{ steps.rust_check.outputs.changed }}
     steps:
       - name: Checkout
-      - uses: actions/checkout@v3
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        run: uv sync
       - id: docs_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
       - id: rust_check

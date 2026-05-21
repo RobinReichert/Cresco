@@ -44,7 +44,7 @@ jobs:
         run: uv run pre-commit run trailing-whitespace --all-files
       - name: Check end of file
         run: uv run pre-commit run end-of-file-fixer --all-files
-      - name: Check newline
+      - name: Chnewline
         run: uv run pre-commit run mixed-line-ending --all-files
 
   lint-docs:
@@ -55,8 +55,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Lint Markdown
+      - name: Setup uv
         run: uv sync
+      - name: Lint Markdown
         run: uv run pre-commit run markdownlint --all-files
 
   build-docs:

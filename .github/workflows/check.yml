@@ -19,6 +19,8 @@ jobs:
     outputs:
       docs_changed: ${{ steps.docs_check.outputs.changed }}
       rust_changed: ${{ steps.rust_check.outputs.changed }}
+      source_changed: ${{ steps.source_check.outputs.changed }}
+      python_changed: ${{ steps.python_check.outputs.changed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -30,7 +32,11 @@ jobs:
       - id: docs_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
       - id: rust_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/'
+      - id: source_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
+      - id: python_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
 
   hygiene:
     runs-on: ubuntu-latest
@@ -90,6 +96,28 @@ jobs:
         env:
           BUNDLE_GEMFILE: ./config/Gemfile
 
+  fmt-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run ruff-format --all-files
+
+  lint-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run ruff-lint --all-files
+
   fmt-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
@@ -103,7 +131,7 @@ jobs:
 
   test-rust:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rust_changed == 'true'
+    if: needs.detect-changes.outputs.source_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -117,7 +145,7 @@ jobs:
 
   check-rust:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rust_changed == 'true'
+    if: needs.detect-changes.outputs.source_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

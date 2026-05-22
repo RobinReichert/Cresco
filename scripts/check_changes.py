@@ -24,7 +24,11 @@ print(changed_files)
 pattern = "^(" + "|".join(patterns) + ")"
 print(f"Looking for changes matching pattern: {pattern}")
 
-changed = bool(re.search(pattern, changed_files, re.MULTILINE))
+result = re.search(pattern, changed_files, re.MULTILINE)
+
+print(f"Found: {result}")
+
+changed = bool(result)
 
 with open(os.environ["GITHUB_OUTPUT"], "a") as f:
     f.write(f"changed={str(changed).lower()}\n")

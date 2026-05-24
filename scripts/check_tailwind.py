@@ -11,9 +11,7 @@ COMPOSE_FILE = os.path.join(REPO_ROOT, "docker", "docker-compose-tailwind-minify
 
 with tempfile.TemporaryDirectory() as tmpdir:
     out_file = os.path.join(tmpdir, "output.css")
-    print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-    print(f"REPO_ROOT: {REPO_ROOT}")
-    print(f"COMPOSE_FILE: {COMPOSE_FILE}")
+
     result = subprocess.run(
         [
             "docker",
@@ -28,6 +26,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     if result.returncode != 0:

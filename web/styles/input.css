@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @source "../pages";
+
+@theme {
+  --color-primary: var(--color-green-600);
+  --color-primary-hover: var(--color-green-700);
+  --color-secondary: var(--color-cyan-500);
+  --color-secondary-hover: var(--color-cyan-600);
+  --color-label: var(--color-gray-600);
+  --color-border: var(--color-gray-400);
+  --color-border-focus: var(--color-secondary);
+}

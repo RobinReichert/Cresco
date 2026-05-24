@@ -46,7 +46,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         committed = f.read()
 
     if generated != committed:
-        print("CSS is out of sync. Run ./cresco.sh update_css and commit the result.")
+        print("CSS is out of sync. Run ./cresco.sh build_css")
         sys.exit(1)
 
     print("CSS is up to date.")

@@ -11,6 +11,9 @@ Commands:
   serve_docs
       Start the documentation server using Docker Compose.
 
+  build_css
+      Build the tailwind css file with all used css classes.
+
   setup
       Install or update the git pre-commit hook.
 
@@ -48,7 +51,7 @@ case "$1" in
         docker compose -f docker/docker-compose-docs-server.yml run --rm drawio-export
         docker compose -f docker/docker-compose-docs-server.yml run --rm --service-ports docs-server
         ;;
-    update_css)
+    build_css)
         docker compose -f docker/docker-compose-tailwind.yml run --rm tailwind
         ;;
     setup)

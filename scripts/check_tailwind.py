@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             "run",
             "--rm",
             "-v",
-            f"{tmpdir}:/app/out",
+            f"{tmpdir}:/app/styles",
             "tailwind",
         ],
         capture_output=True,

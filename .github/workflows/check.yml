@@ -144,7 +144,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
       - name: Check CSS is up to date
-        run: uv run python scripts/check-tailwind.py
+        run: uv run python scripts/check_tailwind.py
 
   fmt-rust:
     needs: detect-changes

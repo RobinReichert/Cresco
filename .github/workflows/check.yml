@@ -53,6 +53,18 @@ jobs:
       - name: Check newline
         run: uv run pre-commit run mixed-line-ending --all-files
 
+  check-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        run: uv sync
+      - name: Check yaml
+        run: uv run pre-commit run check-yaml --all-files
+
+
   lint-docs:
     needs: detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'

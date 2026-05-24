@@ -21,6 +21,8 @@ jobs:
       rust_changed: ${{ steps.rust_check.outputs.changed }}
       source_changed: ${{ steps.source_check.outputs.changed }}
       python_changed: ${{ steps.python_check.outputs.changed }}
+      frontend_changed: ${{ steps.frontend_check.outputs.changed }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -37,6 +39,8 @@ jobs:
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
       - id: python_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
+      - id: frontend_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'web/' '.github/'
 
   hygiene:
     runs-on: ubuntu-latest
@@ -129,6 +133,18 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
       - run: uv run pre-commit run ruff-lint --all-files
+
+  check-tailwind:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Check CSS is up to date
+        run: uv run python scripts/check_tailwind.py
 
   fmt-rust:
     needs: detect-changes

@@ -15,7 +15,7 @@ repos:
     files: ^docs/.*\.md$
   - id: ruff-format
     name: Ruff format
-    entry: uv run ruff format --check
+    entry: uv run ruff format
     language: system
     files: \.py$
     pass_filenames: false
@@ -31,5 +31,7 @@ repos:
   hooks:
   - id: check-yaml
   - id: trailing-whitespace
+    exclude: web/styles/output.css
   - id: end-of-file-fixer
+    exclude: web/styles/output.css
   - id: mixed-line-ending

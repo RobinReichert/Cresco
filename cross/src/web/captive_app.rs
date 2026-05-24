@@ -1,5 +1,5 @@
 use crate::web::{
-    pages::INDEX_HTML,
+    pages::{INDEX_HTML, STYLE_CSS},
     services::{
         captive_login::CaptiveLogin,
         captive_redirect::CaptiveRedirect,
@@ -10,7 +10,7 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, s
 use logic::wifi::LoginData;
 use picoserve::{
     self, AppBuilder,
-    response::StatusCode,
+    response::{File, StatusCode},
     routing::{get, get_service, post_service},
 };
 
@@ -24,6 +24,7 @@ impl AppBuilder for CaptiveApp<'_> {
 
     fn build_app(self) -> picoserve::Router<Self::PathRouter> {
         picoserve::Router::from_service(CaptiveRedirect)
+            .route("/style.css", get_service(File::css(STYLE_CSS)))
             .route(
                 "/",
                 get(|| async {

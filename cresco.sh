@@ -48,6 +48,9 @@ case "$1" in
         docker compose -f docker/docker-compose-docs-server.yml run --rm drawio-export
         docker compose -f docker/docker-compose-docs-server.yml run --rm --service-ports docs-server
         ;;
+    update_css)
+        docker compose -f docker/docker-compose-tailwind.yml run --rm tailwind-check
+        ;;
     setup)
         uv sync
         uv run pre-commit install

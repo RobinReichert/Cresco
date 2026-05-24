@@ -1,0 +1,9 @@
+services:
+  tailwind:
+    build:
+      context: .
+      dockerfile: Dockerfile.tailwind
+    volumes:
+      - ../web/styles:/app/styles
+      - ../web/pages:/app/pages
+    command: npx tailwindcss -i styles/input.css -o styles/output.css --minify

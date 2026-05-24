@@ -11,8 +11,8 @@ services:
   docs-server:
     container_name: docs-server
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile.serve-docs
     working_dir: /app
     volumes:
       - ../docs:/app/docs

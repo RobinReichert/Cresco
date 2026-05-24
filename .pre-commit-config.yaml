@@ -15,7 +15,7 @@ repos:
     files: ^docs/.*\.md$
   - id: ruff-format
     name: Ruff format
-    entry: uv run ruff format --check
+    entry: uv run ruff format
     language: system
     files: \.py$
     pass_filenames: false

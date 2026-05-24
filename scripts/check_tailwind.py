@@ -6,7 +6,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-STYLE_CSS = os.path.join(REPO_ROOT, "static", "style.css")
+STYLE_CSS = os.path.join(REPO_ROOT, "web", "style", "output.css")
 COMPOSE_FILE = os.path.join(REPO_ROOT, "docker", "docker-compose-tailwind-minify.yml")
 
 with tempfile.TemporaryDirectory() as tmpdir:
@@ -26,7 +26,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
         ],
         capture_output=True,
         text=True,
-        check=False,
     )
 
     if result.returncode != 0:

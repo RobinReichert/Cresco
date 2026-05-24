@@ -142,7 +142,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check CSS is up to date
-        run: docker compose -f docker-compose-tailwind-minify.yml run --rm tailwind-check
+        run: uv run python scripts/check-tailwind.py
 
   fmt-rust:
     needs: detect-changes

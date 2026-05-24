@@ -1,0 +1,35 @@
+repos:
+- repo: local
+  hooks:
+  - id: cargo-fmt
+    name: cargo fmt
+    language: system
+    entry: cargo fmt --check
+    files: \.rs$
+    pass_filenames: false
+  - id: markdownlint
+    name: markdownlint
+    language: node
+    additional_dependencies: [markdownlint-cli]
+    entry: markdownlint --config docs/config/.markdownlint.yml
+    files: ^docs/.*\.md$
+  - id: ruff-format
+    name: Ruff format
+    entry: uv run ruff format --check
+    language: system
+    files: \.py$
+    pass_filenames: false
+  - id: ruff-lint
+    name: Ruff lint
+    entry: uv run ruff check --fix
+    language: system
+    files: \.py$
+    pass_filenames: false
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+  - id: check-yaml
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: mixed-line-ending

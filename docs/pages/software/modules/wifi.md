@@ -1,5 +1,5 @@
 ---
-title: Wifi 
+title: Wifi
 layout: default
 parent: Modules
 nav_order: 3

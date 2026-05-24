@@ -19,15 +19,51 @@ jobs:
     outputs:
       docs_changed: ${{ steps.docs_check.outputs.changed }}
       rust_changed: ${{ steps.rust_check.outputs.changed }}
+      source_changed: ${{ steps.source_check.outputs.changed }}
+      python_changed: ${{ steps.python_check.outputs.changed }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - id: docs_check 
-        run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
+      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        run: uv sync
+      - id: docs_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'docs/' '.github/'
       - id: rust_check
-        run: ./scripts/check_changes.sh ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/'
+      - id: source_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
+      - id: python_check
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
+
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        run: uv sync
+      - name: Check trailing whitespace
+        run: uv run pre-commit run trailing-whitespace --all-files
+      - name: Check end of file
+        run: uv run pre-commit run end-of-file-fixer --all-files
+      - name: Check newline
+        run: uv run pre-commit run mixed-line-ending --all-files
+
+  check-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        run: uv sync
+      - name: Check yaml
+        run: uv run pre-commit run check-yaml --all-files
+
 
   lint-docs:
     needs: detect-changes
@@ -36,27 +72,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Node dependencies
-        run: npm install markdownlint-cli
-
+      - uses: astral-sh/setup-uv@v5
+      - name: Setup uv
+        run: uv sync
       - name: Lint Markdown
-        run: npx markdownlint --config docs/config/.markdownlint.yml "docs/**/*.md"
+        run: uv run pre-commit run markdownlint --all-files
 
   build-docs:
-    needs: 
+    needs:
       - detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Export Drawio diagrams
         uses: rlespinasse/drawio-export-action@v2
         with:
@@ -79,6 +108,28 @@ jobs:
         env:
           BUNDLE_GEMFILE: ./config/Gemfile
 
+  fmt-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run ruff-format --all-files
+
+  lint-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run ruff-lint --all-files
+
   fmt-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
@@ -86,17 +137,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install nightly
-        run: |
-          rustup toolchain install nightly
-          rustup default nightly
-          rustup component add rustfmt
-      - name: Check formatting
-        run: cargo fmt --check
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run pre-commit run cargo-fmt --all-files
 
   test-rust:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rust_changed == 'true'
+    if: needs.detect-changes.outputs.source_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -110,7 +157,7 @@ jobs:
 
   check-rust:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rust_changed == 'true'
+    if: needs.detect-changes.outputs.source_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -120,14 +167,14 @@ jobs:
           rustup toolchain install nightly
           rustup default nightly
           rustup target add riscv32imc-unknown-none-elf
-          rustup component add rust-src      
+          rustup component add rust-src
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            build/app_embedded 
+            build/app_embedded
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -137,4 +184,3 @@ jobs:
         env:
           CARGO_TERM_COLOR: always
           CARGO_TARGET_DIR: build/app_embedded
-

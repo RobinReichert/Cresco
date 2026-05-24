@@ -68,7 +68,7 @@
             <p class="footer-text">Credentials are only sent to this device</p>
         </div>
         <script>
-        function loadSsids() { 
+        function loadSsids() {
             fetch('/ssids')
                 .then(r => r.json())
                 .then(response => {

@@ -36,9 +36,9 @@ body:
       required: true
 
   - type: textarea
-    id: solution 
+    id: solution
     attributes:
-      label: Solution 
+      label: Solution
       description: How would you approach this?
       placeholder: e.g. Move logic into smaller functions
     validations:

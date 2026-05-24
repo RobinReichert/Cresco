@@ -19,3 +19,6 @@ docs/assets/drawio
 
 # Files created by mac_os
 .DS_STORE
+
+# Python environment
+.venv/

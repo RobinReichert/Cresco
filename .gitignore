@@ -14,6 +14,9 @@ docs/config/Gemfile.lock
 docs/.jekyll-cache
 docs/.sass-cache
 
+# Jekyll incremental build metadata
+docs/.jekyll-metadata
+
 # drawio diagrams are build in ci
 docs/assets/drawio
 

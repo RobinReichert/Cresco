@@ -70,7 +70,7 @@ case "$1" in
         cargo build --release
         ;;
     flash)
-        espflash flash $ELF_PATH
+        espflash flash --partition-table partitions.csv $ELF_PATH
         ;;
     monitor)
         espflash monitor --chip esp32c3 --log-format defmt --elf $ELF_PATH

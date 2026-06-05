@@ -11,10 +11,13 @@ use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
     mk_static,
+    shared_flash::{SharedFlash, SharedFlashInterface},
+    storage::CredentialStorage,
     web::{self, captive_app::CaptiveApp, services::captive_ssids::SsidsList},
     wifi::{self, connection},
 };
 use defmt::info;
+use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, signal::Signal};
 use embassy_time::{Duration, Timer};
@@ -22,9 +25,11 @@ use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println as _;
+use esp_storage::FlashStorage;
 use heapless::Vec;
 use logic::wifi::LoginData;
 use picoserve::{AppBuilder, AppRouter};
+use sequential_storage::cache::NoCache;
 
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
@@ -62,6 +67,16 @@ async fn main(spawner: Spawner) -> ! {
     let (wifi_controller, ap_stack, _sta_stack) =
         wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
 
+    let flash_blocking = FlashStorage::new(peripherals.FLASH);
+    let flash_async = BlockingAsync::new(flash_blocking);
+    let shared_flash = SharedFlash::new(flash_async);
+    let shared_flash = mk_static!(
+        SharedFlash<BlockingAsync<esp_storage::FlashStorage>>,
+        shared_flash
+    );
+    let credential_storage =
+        CredentialStorage::new(SharedFlashInterface::new(shared_flash), NoCache::new());
+
     let ssids: Mutex<CriticalSectionRawMutex, SsidsList> = Mutex::new(Vec::new());
     let ssids: &'static _ = mk_static!(Mutex<CriticalSectionRawMutex, SsidsList>, ssids);
     let credentials: Signal<CriticalSectionRawMutex, LoginData> = Signal::new();
@@ -69,7 +84,12 @@ async fn main(spawner: Spawner) -> ! {
         mk_static!(Signal<CriticalSectionRawMutex, LoginData>, credentials);
 
     spawner
-        .spawn(connection(wifi_controller, &ssids, &credentials))
+        .spawn(connection(
+            wifi_controller,
+            &ssids,
+            &credentials,
+            credential_storage,
+        ))
         .ok();
 
     spawner.spawn(dhcp_task(ap_stack)).ok();

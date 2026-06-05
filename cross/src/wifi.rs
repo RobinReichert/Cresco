@@ -1,4 +1,5 @@
 use defmt::info;
+use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
 use embassy_futures::select::{Either3, select, select3};
 use embassy_net::{Ipv4Cidr, Runner, Stack, StackResources, StaticConfigV4};
@@ -10,14 +11,18 @@ use esp_radio::wifi::{
     AccessPointConfig, ClientConfig, ModeConfig, ScanConfig, WifiController, WifiDevice, WifiEvent,
     WifiStaState, sta_state,
 };
+use esp_storage::FlashStorage;
 use heapless::String;
 use logic::{
     config::SERVER_IP,
     wifi::{LoginData, WifiManager, simple::SimpleWifiManager},
 };
+use sequential_storage::cache::NoCache;
 
 use crate::{
     mk_static,
+    shared_flash::SharedFlashInterface,
+    storage::CredentialStorage,
     web::services::captive_ssids::{MAX_SSID_COUNT, SsidsList},
 };
 
@@ -58,20 +63,33 @@ pub async fn start_wifi(
     (wifi_controller, ap_stack, sta_stack)
 }
 
+pub type ConcreteCredentialStorage<'a> =
+    CredentialStorage<SharedFlashInterface<'a, BlockingAsync<FlashStorage<'static>>>, NoCache>;
+
 #[embassy_executor::task]
 pub async fn connection(
     mut controller: WifiController<'static>,
     ssids: &'static Mutex<CriticalSectionRawMutex, SsidsList>,
     credentials: &'static Signal<CriticalSectionRawMutex, LoginData>,
+    mut credential_storage: ConcreteCredentialStorage<'static>,
 ) {
+    info!("connection task started");
     let mut c = SimpleWifiManager::new();
-    let mut event: Option<logic::wifi::WifiEvent> =
-        Some(logic::wifi::WifiEvent::CredentialsMissing);
+    let mut event: Option<logic::wifi::WifiEvent> = Some(logic::wifi::WifiEvent::Start);
     loop {
         match c.handle_event(event.take().expect("no event: this should not happen")) {
             logic::wifi::WifiAction::RetrieveCredentials => {
                 info!("retrieving credentials");
-                event = Some(logic::wifi::WifiEvent::CredentialsMissing);
+                event = match credential_storage.get_credentials().await {
+                    Ok(credentials) => {
+                        info!("found credentials");
+                        Some(logic::wifi::WifiEvent::CredentialsFound { credentials })
+                    }
+                    Err(_) => {
+                        info!("did not find credentials");
+                        Some(logic::wifi::WifiEvent::CredentialsMissing)
+                    }
+                };
             }
             logic::wifi::WifiAction::WaitForCredentials => {
                 info!("starting ap sta");
@@ -124,7 +142,7 @@ pub async fn connection(
             }
             logic::wifi::WifiAction::EstablishConnection { credentials } => {
                 info!("starting client");
-                let LoginData { ssid, password } = credentials;
+                let LoginData { ssid, password } = credentials.clone();
                 let _ = controller.stop_async().await;
                 let config = ModeConfig::Client(
                     ClientConfig::default()
@@ -137,8 +155,10 @@ pub async fn connection(
                 match sta_state() {
                     WifiStaState::Connected => {
                         info!("connected");
+                        if !credential_storage.set_credentials(credentials).await {
+                            info!("failed to store credentials");
+                        }
                         event = Some(logic::wifi::WifiEvent::ConnectionEstablished);
-                        //TODO store credentials
                     }
                     _ => {
                         info!("failed client connection");

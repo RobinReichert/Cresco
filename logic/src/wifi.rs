@@ -1,7 +1,35 @@
+use sequential_storage::map::SerializationError;
+
 #[derive(serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct LoginData {
     pub ssid: heapless::String<32>,
     pub password: heapless::String<32>,
+}
+
+impl<'d> sequential_storage::map::Value<'d> for LoginData {
+    fn serialize_into(&self, buffer: &mut [u8]) -> Result<usize, SerializationError> {
+        let ssid_bytes = self.ssid.as_bytes();
+        let password_bytes = self.password.as_bytes();
+        buffer[0] = ssid_bytes.len() as u8;
+        buffer[1..1 + ssid_bytes.len()].copy_from_slice(ssid_bytes);
+        buffer[1 + ssid_bytes.len()..1 + ssid_bytes.len() + password_bytes.len()]
+            .copy_from_slice(password_bytes);
+        Ok(1 + ssid_bytes.len() + password_bytes.len())
+    }
+
+    fn deserialize_from(buffer: &'d [u8]) -> Result<(Self, usize), SerializationError> {
+        let ssid_len = buffer[0] as usize;
+        let ssid = core::str::from_utf8(&buffer[1..1 + ssid_len])
+            .map_err(|_| SerializationError::InvalidData)?;
+        let ssid =
+            heapless::String::try_from(ssid).map_err(|_| SerializationError::BufferTooSmall)?;
+        let password = core::str::from_utf8(&buffer[1 + ssid_len..])
+            .map_err(|_| SerializationError::InvalidData)?;
+        let password =
+            heapless::String::try_from(password).map_err(|_| SerializationError::BufferTooSmall)?;
+        let total = 1 + ssid_len + password.len();
+        Ok((LoginData { ssid, password }, total))
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -14,6 +42,7 @@ pub enum WifiAction {
 }
 
 pub enum WifiEvent {
+    Start,
     CredentialsMissing,
     CredentialsFound { credentials: LoginData },
     CredentialsReceived { credentials: LoginData },
@@ -34,6 +63,7 @@ pub mod simple {
 
     #[derive(Debug)]
     pub enum SimpleWifiState {
+        Start,
         RetrievingCredentials,
         WaitingForCredentials,
         EstablishingConnection {
@@ -50,6 +80,10 @@ pub mod simple {
     impl WifiManager for SimpleWifiManager {
         fn handle_event(&mut self, event: WifiEvent) -> WifiAction {
             match (&self.state, event) {
+                (SimpleWifiState::Start, WifiEvent::Start) => {
+                    self.state = SimpleWifiState::RetrievingCredentials;
+                    WifiAction::RetrieveCredentials
+                }
                 (SimpleWifiState::RetrievingCredentials, WifiEvent::CredentialsMissing) => {
                     self.state = SimpleWifiState::WaitingForCredentials;
                     WifiAction::WaitForCredentials
@@ -121,7 +155,7 @@ pub mod simple {
     impl SimpleWifiManager {
         pub fn new() -> Self {
             Self {
-                state: SimpleWifiState::RetrievingCredentials,
+                state: SimpleWifiState::Start,
             }
         }
     }

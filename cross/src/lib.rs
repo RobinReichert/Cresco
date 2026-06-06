@@ -3,6 +3,9 @@
 
 pub mod dhcp;
 pub mod dns;
+pub mod partitions;
+pub mod shared_flash;
+pub mod storage;
 pub mod web;
 pub mod wifi;
 

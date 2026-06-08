@@ -178,6 +178,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
       - name: Install nightly and target
         run: |
           rustup toolchain install nightly

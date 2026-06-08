@@ -1,8 +1,20 @@
 fn main() {
+    println!("cargo:rerun-if-changed=");
+    pre_build();
     linker_be_nice();
     println!("cargo:rustc-link-arg=-Tdefmt.x");
     // make sure linkall.x is the last linker script (otherwise might cause problems with flip-link)
     println!("cargo:rustc-link-arg=-Tlinkall.x");
+}
+
+fn pre_build() {
+    let status = std::process::Command::new("uv")
+        .args(["run", "../scripts/pre_build.py"])
+        .status()
+        .expect("Failed to run checks");
+    if !status.success() {
+        std::process::exit(1);
+    }
 }
 
 fn linker_be_nice() {

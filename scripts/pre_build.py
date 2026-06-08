@@ -12,7 +12,7 @@ RESET = "\033[0m"
 
 CACHE_FILE = ".pre-build-cache.json"
 BASE_DIR = os.path.pardir
-DEFAULT_FILES = ["."]
+DEFAULT_FILES = [os.path.join(os.pardir, ".pre-build-config.yaml")]
 DEFAULT_EXCLUDES = [r"\.venv"]
 
 

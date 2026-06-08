@@ -78,7 +78,7 @@ for check in config["checks"]:
             print(f"{SKIP} SKIPPED {RESET}")
             continue
 
-    result = subprocess.run(entry, shell=True, capture_output=True)
+    result = subprocess.run(entry, shell=True, capture_output=True, cwd="..")
     if result.returncode != 0:
         print(f"{RED} FAILED  {RESET}")
         failed = True

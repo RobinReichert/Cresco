@@ -1,3 +1,7 @@
 checks:
-  - name: Example check
-    entry: echo test
+  - name: Partitions check
+    entry: uv run scripts/check_partitions.py
+    files:
+      - partitions.csv
+      - cross/src/partitions.rs
+      - scripts/check_partitions.py

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ELF_PATH="build/app_embedded/riscv32imc-unknown-none-elf/release/cross"
+PARTITIONS_PATH="build/app_embedded/partitions.csv"
 
 show_help() {
   cat << EOF
@@ -67,10 +68,10 @@ case "$1" in
         ;;
     build_app_embedded)
         cd cross
-        cargo build --release
+        cargo build --release && cd .. && cp partitions.csv $PARTITIONS_PATH
         ;;
     flash)
-        espflash flash --partition-table partitions.csv $ELF_PATH
+        espflash flash --partition-table $PARTITIONS_PATH $ELF_PATH
         ;;
     monitor)
         espflash monitor --chip esp32c3 --log-format defmt --elf $ELF_PATH

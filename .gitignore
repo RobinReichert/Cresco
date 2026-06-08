@@ -10,9 +10,10 @@ build/
 # Local Jekyll/Ruby lock files
 docs/config/Gemfile.lock
 
-# Jekyll/Sass cache files
+# Cache files
 docs/.jekyll-cache
 docs/.sass-cache
+cross/.pre-build-cache.json
 
 # Jekyll incremental build metadata
 docs/.jekyll-metadata

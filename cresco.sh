@@ -1,7 +1,20 @@
 #!/bin/bash
 
-ELF_PATH="build/app_embedded/riscv32imc-unknown-none-elf/release/cross"
 PARTITIONS_PATH="build/app_embedded/partitions.csv"
+APP_EMBEDDED_ELF_PATH="build/app_embedded/riscv32imc-unknown-none-elf/release/cross"
+CAMERA_ELF_PATH="build/camera/camera.elf"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f "$SCRIPT_DIR/cresco.local.sh" ] && . "$SCRIPT_DIR/cresco.local.sh"
+
+run_in_idf() {
+  if [ -z "${IDF_EXPORT_CMD:-}" ]; then
+    echo "ESP-IDF activation not configured." >&2
+    echo "Copy cresco.local.sh.example to cresco.local.sh and set IDF_EXPORT_CMD." >&2
+    exit 1
+  fi
+  bash -c "${IDF_EXPORT_CMD} >/dev/null && $1" bash
+}
 
 show_help() {
   cat << EOF
@@ -16,7 +29,8 @@ Commands:
       Build the tailwind css file with all used css classes.
 
   setup
-      Install or update the git pre-commit hook.
+      Sync dependencies, install the git pre-commit hook, and pull the
+      drawio-export image.
 
   format
       Format the Rust code using cargo fmt.
@@ -24,14 +38,15 @@ Commands:
   test
       Run tests for the 'logic' package.
 
-  build_app_embedded
-      Build the embedded application in release mode.
+  build {app_embedded|camera}
+      app_embedded  Build the embedded Rust application in release mode.
+      camera        Build the ESP-IDF camera firmware via idf.py.
 
-  flash
-      Flash the compiled ELF to the ESP32-C3 device.
+  flash {app_embedded|camera}
+      Flash the compiled firmware to the device using espflash.
 
-  monitor
-      Open a serial monitor with defmt logs for the ESP32-C3.
+  monitor {app_embedded|camera}
+      Open a serial monitor for the device.
 
   -h, --help
       Show this help message.
@@ -39,8 +54,8 @@ Commands:
 Examples:
 
   $0 setup
-  $0 build_app_embedded
-  $0 flash
+  $0 build camera
+  $0 flash app_embedded
 EOF
 }
 
@@ -66,18 +81,51 @@ case "$1" in
     test)
         cargo test -p logic
         ;;
-    build_app_embedded)
-        cd cross
-        cargo build --release && cd .. && cp partitions.csv $PARTITIONS_PATH
+    build)
+        case "$2" in
+            app_embedded)
+                cd cross
+                cargo build --release && cd .. && cp partitions.csv $PARTITIONS_PATH
+                ;;
+            camera)
+                run_in_idf "idf.py -C camera -B build/camera build"
+                ;;
+            *)
+                echo "Usage: $0 build {app_embedded|camera}"
+                exit 1
+                ;;
+        esac
         ;;
     flash)
-        espflash flash --partition-table $PARTITIONS_PATH $ELF_PATH
+        case "$2" in
+            app_embedded)
+                espflash flash --partition-table $PARTITIONS_PATH $ELF_PATH
+                ;;
+            camera)
+                espflash flash $CAMERA_ELF_PATH
+                ;;
+            *)
+                echo "Usage: $0 flash {app_embedded|camera}"
+                exit 1
+                ;;
+        esac
         ;;
     monitor)
-        espflash monitor --chip esp32c3 --log-format defmt --elf $ELF_PATH
+        case "$2" in
+            app_embedded)
+                espflash monitor --chip esp32c3 --log-format defmt --elf $APP_EMBEDDED_ELF_PATH
+                ;;
+            camera)
+                espflash monitor --chip esp32s3 --elf $CAMERA_ELF_PATH
+                ;;
+            *)
+                echo "Usage: $0 monitor {app_embedded|camera}"
+                exit 1
+                ;;
+        esac
         ;;
     *)
-        echo "Usage: $0 {serve_docs}"
+        show_help
         exit 1
         ;;
 esac

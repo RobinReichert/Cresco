@@ -160,6 +160,20 @@ jobs:
       - run: uv sync
       - run: uv run pre-commit run clang-format --all-files
 
+  build-camera:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.camera_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build camera firmware
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.0.1
+          target: esp32s3
+          path: camera
+
   fmt-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'

@@ -1,0 +1,9 @@
+CompileFlags:
+  CompilationDatabase: ../build/camera
+  Remove:
+    - -mlongcalls
+    - -fstrict-volatile-bitfields
+    - -fno-tree-*
+    - -fno-shrink-wrap
+    - -fno-malloc-dce
+    - -fzero-init-padding-bits=*

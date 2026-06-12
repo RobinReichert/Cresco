@@ -1,0 +1,2 @@
+# Per-developer local overrides for cresco.sh.
+IDF_EXPORT_CMD=""

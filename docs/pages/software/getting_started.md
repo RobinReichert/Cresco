@@ -49,12 +49,49 @@ Otherwise follow
 the [official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 for your platform.
 
+### 5. Install ESP-IDF (camera firmware)
+
+The camera firmware is built with
+[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v6.0.1/esp32s3/get-started/index.html)
+v6.0.1 for the ESP32-S3. The recommended way to install it is the
+[ESP-IDF Installation Manager (EIM)](https://github.com/espressif/idf-im-ui),
+Espressif's official installer, which sets up the framework, the toolchain
+and a dedicated Python environment.
+
+{: .note}
+> ESP-IDF is only required for `./cresco.sh build camera`. If you are only
+> working on the embedded Rust application you can skip this step.
+
+After installing, note the command that activates the environment in your shell
+(e.g. an `export.sh` or an EIM `activate_idf_*.sh` script) — you will need it in
+the setup step below.
+
 ---
 
 ## Setup
+
+### 1. Install tooling and git hooks
 
 Once all prerequisites are in place, run:
 
 ```bash
 ./cresco.sh setup
+```
+
+### 2. Configure ESP-IDF activation (camera firmware only)
+
+`./cresco.sh build camera` needs to activate ESP-IDF.
+Because every developer's install path differs, the activation command lives in
+an untracked `cresco.local.sh` instead of being committed. Create it from the
+template:
+
+```bash
+cp cresco.local.sh.example cresco.local.sh
+```
+
+Then edit `cresco.local.sh` and set `IDF_EXPORT_CMD` to the command that
+activates ESP-IDF on your machine, for example:
+
+```bash
+IDF_EXPORT_CMD="source $HOME/.espressif/tools/activate_idf_v6.0.1.sh"
 ```

@@ -33,3 +33,6 @@ cresco.local.sh
 # ESP-IDF generated config
 camera/sdkconfig
 camera/sdkconfig.old
+
+# ESP-IDF component manager downloads
+camera/managed_components/

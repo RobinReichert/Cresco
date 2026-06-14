@@ -2,6 +2,7 @@ CompileFlags:
   CompilationDatabase: ../build/camera
   Remove:
     - -mlongcalls
+    - -mdisable-hardware-atomics
     - -fstrict-volatile-bitfields
     - -fno-tree-*
     - -fno-shrink-wrap

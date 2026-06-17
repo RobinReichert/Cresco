@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: CC0-1.0
  */
+#include "camera.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_system.h"

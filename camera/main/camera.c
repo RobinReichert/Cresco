@@ -1,6 +1,5 @@
 #include "camera.h"
 #include "esp_camera.h"
-#include "esp_err.h"
 #include "sensor.h"
 
 #define CAM_PIN_PWDN -1
@@ -62,7 +61,7 @@ esp_err_t init_camera() {
   return ESP_OK;
 }
 
-esp_err_t capture_image(uint8_t **buffer, size_t *len) {
+esp_err_t capture_image(const uint8_t **buffer, size_t *len) {
   if (curr_fb) {
     return ESP_ERR_INVALID_STATE;
   }

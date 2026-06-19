@@ -1,4 +1,4 @@
-pub type Float = f64;
+use crate::Float;
 
 pub struct PidController {
     kp: Float,

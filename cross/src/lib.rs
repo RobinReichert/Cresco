@@ -1,6 +1,7 @@
 #![no_std]
 #![feature(impl_trait_in_assoc_type)]
 
+pub mod blackboard;
 pub mod dhcp;
 pub mod dns;
 pub mod partitions;

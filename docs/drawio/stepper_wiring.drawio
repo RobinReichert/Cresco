@@ -1,0 +1,93 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="stepper_wiring" id="stepper-wiring-1">
+    <mxGraphModel dx="1024" dy="640" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="esp" value="ESP32-C3" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="40" y="120" width="170" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="esp-gpio0" value="GPIO0" parent="esp" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="60" y="45" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="esp-gpio1" value="GPIO1" parent="esp" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="60" y="75" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="esp-gpio2" value="GPIO2" parent="esp" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="60" y="105" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="esp-gpio3" value="GPIO3" parent="esp" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="60" y="135" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="esp-gnd" value="GND" parent="esp" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="60" y="170" width="100" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="drv" value="DRV8833" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="350" y="95" width="180" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-ain1" value="AIN1" parent="drv" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="70" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-ain2" value="AIN2" parent="drv" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="100" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-bin1" value="BIN1" parent="drv" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="130" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-bin2" value="BIN2" parent="drv" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="160" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-gnd" value="GND" parent="drv" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="195" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-aout1" value="AOUT1" parent="drv" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="110" y="70" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-aout2" value="AOUT2" parent="drv" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="110" y="100" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-bout1" value="BOUT1" parent="drv" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="110" y="130" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-bout2" value="BOUT2" parent="drv" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="110" y="160" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-vm" value="VM" parent="drv" vertex="1" style="text;html=1;align=center;fontColor=#333333;">
+          <mxGeometry x="40" y="255" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="drv-pgnd" value="GND" parent="drv" vertex="1" style="text;html=1;align=center;fontColor=#333333;">
+          <mxGeometry x="100" y="255" width="40" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="motor" value="Stepper&#10;(Coil A / Coil B)" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="620" y="140" width="150" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="supply" value="Motor supply&#10;VM+ / GND (e.g. 5 V)" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="360" y="410" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w0" parent="1" source="esp-gpio0" target="drv-ain1" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="w1" parent="1" source="esp-gpio1" target="drv-ain2" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="w2" parent="1" source="esp-gpio2" target="drv-bin1" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="w3" parent="1" source="esp-gpio3" target="drv-bin2" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wgnd" parent="1" source="esp-gnd" target="drv-gnd" edge="1" style="endArrow=none;html=1;strokeColor=#666666;dashed=1;rounded=0;" />
+        <mxCell id="wa1" parent="1" source="drv-aout1" target="motor" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wa2" parent="1" source="drv-aout2" target="motor" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wb1" parent="1" source="drv-bout1" target="motor" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wb2" parent="1" source="drv-bout2" target="motor" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wvm" parent="1" source="drv-vm" target="supply" edge="1" style="endArrow=none;html=1;strokeColor=#000000;rounded=0;" />
+        <mxCell id="wpgnd" parent="1" source="drv-pgnd" target="supply" edge="1" style="endArrow=none;html=1;strokeColor=#666666;dashed=1;rounded=0;" />
+
+        <mxCell id="note1" value="nSLEEP must be high to enable the driver — most breakout boards pull it up by default." parent="1" vertex="1" style="text;html=1;align=left;fontColor=#666666;fontStyle=2;fontSize=11;">
+          <mxGeometry x="40" y="460" width="520" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="note2" value="Tie all grounds together (ESP32, DRV8833, motor supply). Group the motor leads into the two coils correctly." parent="1" vertex="1" style="text;html=1;align=left;fontColor=#666666;fontStyle=2;fontSize=11;">
+          <mxGeometry x="40" y="478" width="620" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

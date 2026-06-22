@@ -99,7 +99,7 @@ case "$1" in
     flash)
         case "$2" in
             app_embedded)
-                espflash flash --partition-table $PARTITIONS_PATH $ELF_PATH
+                espflash flash --partition-table $PARTITIONS_PATH $APP_EMBEDDED_ELF_PATH
                 ;;
             camera)
                 espflash flash $CAMERA_ELF_PATH

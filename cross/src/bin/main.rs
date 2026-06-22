@@ -12,6 +12,7 @@ use cross::{
     dns::dns_task,
     mk_static,
     shared_flash::{SharedFlash, SharedFlashInterface},
+    stepper::{Stepper, drv8833::Drv8833},
     storage::CredentialStorage,
     web::{self, captive_app::CaptiveApp, services::captive_ssids::SsidsList},
     wifi::{self, connection},
@@ -21,9 +22,12 @@ use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, signal::Signal};
 use embassy_time::{Duration, Timer};
-use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
+use esp_hal::{
+    clock::CpuClock,
+    gpio::{Level, Output, OutputConfig},
+};
 use esp_println as _;
 use esp_storage::FlashStorage;
 use heapless::Vec;
@@ -108,7 +112,14 @@ async fn main(spawner: Spawner) -> ! {
         spawner.must_spawn(web::web_task(task_id, ap_stack, captive_app));
     }
 
+    let ain1 = Output::new(peripherals.GPIO9, Level::Low, OutputConfig::default());
+    let ain2 = Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default());
+    let bin1 = Output::new(peripherals.GPIO20, Level::Low, OutputConfig::default());
+    let bin2 = Output::new(peripherals.GPIO21, Level::Low, OutputConfig::default());
+    let mut stepper = Drv8833::new(ain1, ain2, bin1, bin2, 200);
     loop {
-        Timer::after(Duration::from_secs(1)).await;
+        let _ = stepper.move_steps(-2500).await;
+        let _ = stepper.release().await;
+        Timer::after(Duration::from_secs(5)).await;
     }
 }

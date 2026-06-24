@@ -5,6 +5,7 @@ pub mod blackboard;
 pub mod dhcp;
 pub mod dns;
 pub mod partitions;
+pub mod ph;
 pub mod shared_flash;
 pub mod stepper;
 pub mod storage;

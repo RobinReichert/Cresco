@@ -11,6 +11,7 @@ use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
     mk_static,
+    ph::{PhProbe, analog::AnalogPhProbe, correct_for_temperature},
     shared_flash::{SharedFlash, SharedFlashInterface},
     stepper::{Stepper, drv8833::Drv8833},
     storage::CredentialStorage,
@@ -117,9 +118,14 @@ async fn main(spawner: Spawner) -> ! {
     let bin1 = Output::new(peripherals.GPIO20, Level::Low, OutputConfig::default());
     let bin2 = Output::new(peripherals.GPIO21, Level::Low, OutputConfig::default());
     let mut stepper = Drv8833::new(ain1, ain2, bin1, bin2, 200);
+    let _ = stepper.release().await;
+
+    let mut ph_probe = AnalogPhProbe::new(peripherals.ADC1, peripherals.GPIO0);
     loop {
-        let _ = stepper.move_steps(-2500).await;
-        let _ = stepper.release().await;
+        //let _ = stepper.move_steps(-2500).await;
+        let res = ph_probe.read().await.expect("ph probe should read");
+        let corrected = correct_for_temperature(res, 1.0);
+        info!("ph: {}", corrected);
         Timer::after(Duration::from_secs(5)).await;
     }
 }

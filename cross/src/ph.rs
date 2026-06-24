@@ -43,7 +43,18 @@ pub mod analog {
         type Error = ();
 
         async fn read(&mut self) -> Result<Float, Self::Error> {
-            Ok(self.adc.read_oneshot(&mut self.pin).await as Float)
+            const SAMPLES: u32 = 16;
+            let mut sum: u32 = 0;
+            let mut min = u16::MAX;
+            let mut max = 0;
+            for _ in 0..SAMPLES {
+                let v = self.adc.read_oneshot(&mut self.pin).await;
+                sum += v as u32;
+                min = min.min(v);
+                max = max.max(v);
+            }
+            let avg = (sum - min as u32 - max as u32) / (SAMPLES - 2); //drop min and max to counteract spikes
+            Ok((avg * 2) as Float) //times two because of voltage divider
         }
     }
 }

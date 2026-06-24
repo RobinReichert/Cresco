@@ -11,7 +11,7 @@ use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
     mk_static,
-    ph::{PhProbe, analog::AnalogPhProbe, correct_for_temperature},
+    ph::{PhProbe, analog::AnalogPhProbe},
     shared_flash::{SharedFlash, SharedFlashInterface},
     stepper::{Stepper, drv8833::Drv8833},
     storage::CredentialStorage,

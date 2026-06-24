@@ -122,10 +122,9 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut ph_probe = AnalogPhProbe::new(peripherals.ADC1, peripherals.GPIO0);
     loop {
-        //let _ = stepper.move_steps(-2500).await;
+        let _ = stepper.move_steps(-2500).await;
         let res = ph_probe.read().await.expect("ph probe should read");
-        let corrected = correct_for_temperature(res, 1.0);
-        info!("ph: {}", corrected);
+        info!("ph: {}", res);
         Timer::after(Duration::from_secs(5)).await;
     }
 }

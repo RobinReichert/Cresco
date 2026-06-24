@@ -6,10 +6,6 @@ pub trait PhProbe {
     async fn read(&mut self) -> Result<Float, Self::Error>;
 }
 
-pub fn correct_for_temperature(ph: Float, _temp: Float) -> Float {
-    ph
-}
-
 pub mod analog {
 
     use super::*;

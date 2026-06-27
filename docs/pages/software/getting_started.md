@@ -11,8 +11,7 @@ nav_order: 1
 
 ### 1. Clone the Repository
 
-```bash
-git clone <repo-url>
+```bash git clone <repo-url>
 cd <repo-name>
 ```
 
@@ -59,7 +58,7 @@ Espressif's official installer, which sets up the framework, the toolchain
 and a dedicated Python environment.
 
 {: .note}
-> ESP-IDF is only required for `./cresco.sh build camera`. If you are only
+> ESP-IDF is only required for the `build camera` command. If you are only
 > working on the embedded Rust application you can skip this step.
 
 After installing, note the command that activates the environment in your shell
@@ -70,28 +69,50 @@ the setup step below.
 
 ## Setup
 
+{: .note}
+> The project ships two equivalent task runners: `cresco.sh` for Linux and macOS
+> and `cresco.ps1` for Windows (PowerShell). Use whichever matches your platform
+> the commands and arguments are identical.
+
 ### 1. Install tooling and git hooks
 
 Once all prerequisites are in place, run:
 
 ```bash
+# Linux / macOS
 ./cresco.sh setup
+```
+
+```powershell
+# Windows (PowerShell)
+.\cresco.ps1 setup
 ```
 
 ### 2. Configure ESP-IDF activation (camera firmware only)
 
-`./cresco.sh build camera` needs to activate ESP-IDF.
+The `build camera` command needs to activate ESP-IDF.
 Because every developer's install path differs, the activation command lives in
-an untracked `cresco.local.sh` instead of being committed. Create it from the
+an untracked local config instead of being committed. Create it from the
 template:
 
 ```bash
+# Linux / macOS
 cp cresco.local.sh.example cresco.local.sh
 ```
 
-Then edit `cresco.local.sh` and set `IDF_EXPORT_CMD` to the command that
-activates ESP-IDF on your machine, for example:
+```powershell
+# Windows (PowerShell)
+Copy-Item cresco.local.ps1.example cresco.local.ps1
+```
+
+Then set `IDF_EXPORT_CMD` to the command that activates ESP-IDF on your machine:
 
 ```bash
+# cresco.local.sh
 IDF_EXPORT_CMD="source $HOME/.espressif/tools/activate_idf_v6.0.1.sh"
+```
+
+```powershell
+# cresco.local.ps1
+$IDF_EXPORT_CMD = "& $HOME\.espressif\tools\activate_idf_v6.0.1.ps1"
 ```

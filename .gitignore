@@ -27,8 +27,9 @@ docs/assets/drawio
 # Python environment
 .venv/
 
-# Per-developer local overrides for cresco.sh
+# Per-developer local overrides for cresco.sh / cresco.ps1
 cresco.local.sh
+cresco.local.ps1
 
 # ESP-IDF generated config
 camera/sdkconfig

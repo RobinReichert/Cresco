@@ -1,0 +1,2 @@
+# Per-developer local overrides for cresco.ps1.
+$IDF_EXPORT_CMD = ""

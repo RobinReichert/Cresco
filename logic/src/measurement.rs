@@ -49,6 +49,16 @@ pub struct MeasurementManager {
 }
 
 impl MeasurementManager {
+    pub fn new() -> Self {
+        let ec_calibration = calibration::Linear::new();
+        let ph_calibration = calibration::Linear::new();
+        Self {
+            state: MeasurementState::Idle,
+            ec_calibration,
+            ph_calibration,
+        }
+    }
+
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
             (MeasurementState::Idle, MeasurementEvent::StartMeasurement) => {

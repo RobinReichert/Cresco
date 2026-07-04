@@ -4,6 +4,7 @@ use crate::{
 };
 
 pub enum MeasurementState {
+    Start,
     Idle,
     MeasuringEc,
     MeasuringPh { ec: Float },
@@ -14,6 +15,7 @@ pub enum MeasurementState {
 }
 
 pub enum MeasurementEvent {
+    Start,
     StartMeasurement,
     StartEcCalibration,
     StartPhCalibration,
@@ -53,7 +55,7 @@ impl MeasurementManager {
         let ec_calibration = calibration::Linear::new();
         let ph_calibration = calibration::Linear::new();
         Self {
-            state: MeasurementState::Idle,
+            state: MeasurementState::Start,
             ec_calibration,
             ph_calibration,
         }
@@ -61,6 +63,10 @@ impl MeasurementManager {
 
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
+            (MeasurementState::Start, MeasurementEvent::Start) => {
+                self.state = MeasurementState::Idle;
+                MeasurementAction::WaitForNext
+            }
             (MeasurementState::Idle, MeasurementEvent::StartMeasurement) => {
                 if self.ec_calibration.is_calibrated() && self.ph_calibration.is_calibrated() {
                     self.state = MeasurementState::MeasuringEc;

@@ -24,11 +24,17 @@ pub enum MeasurementEvent {
     PhMeasured { ph: Float },
 }
 
+pub enum MeasurementError {
+    NotCalibratedYet,
+    FailedCalibration,
+}
+
 pub enum MeasurementAction {
     Ignore,
     MeasureEc,
     MeasurePh,
     WriteMeasurements { ec: Float, ph: Float },
+    ShowError { code: MeasurementError },
     RetrieveEcFirst,
     RetrieveEcSecond,
     RetrievePhFirst,
@@ -50,7 +56,9 @@ impl MeasurementManager {
                     self.state = MeasurementState::MeasureEc;
                     MeasurementAction::MeasureEc
                 } else {
-                    MeasurementAction::StartPeriod
+                    MeasurementAction::ShowError {
+                        code: MeasurementError::NotCalibratedYet,
+                    }
                 }
             }
             (MeasurementState::MeasureEc, MeasurementEvent::EcMeasured { ec }) => {
@@ -71,7 +79,9 @@ impl MeasurementManager {
                             ph: calibrated_ph,
                         }
                     }
-                    (_, _) => MeasurementAction::StartPeriod,
+                    (_, _) => MeasurementAction::ShowError {
+                        code: MeasurementError::NotCalibratedYet,
+                    },
                 }
             }
             (MeasurementState::MeasurePh { .. }, MeasurementEvent::Abort) => {
@@ -96,10 +106,15 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 self.state = MeasurementState::Idle;
-                let _ = self
+                match self
                     .ec_calibration
-                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second });
-                MeasurementAction::StartPeriod
+                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
+                {
+                    Ok(_) => MeasurementAction::StartPeriod,
+                    Err(_) => MeasurementAction::ShowError {
+                        code: MeasurementError::FailedCalibration,
+                    },
+                }
             }
             (MeasurementState::CalibrateEcSecond { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
@@ -123,10 +138,15 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 self.state = MeasurementState::Idle;
-                let _ = self
+                match self
                     .ph_calibration
-                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second });
-                MeasurementAction::StartPeriod
+                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
+                {
+                    Ok(_) => MeasurementAction::StartPeriod,
+                    Err(_) => MeasurementAction::ShowError {
+                        code: MeasurementError::FailedCalibration,
+                    },
+                }
             }
             (MeasurementState::CalibratePhSecond { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;

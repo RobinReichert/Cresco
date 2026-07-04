@@ -46,8 +46,12 @@ impl MeasurementManager {
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
             (MeasurementState::Idle, MeasurementEvent::Period) => {
-                self.state = MeasurementState::MeasureEc;
-                MeasurementAction::MeasureEc
+                if self.ec_calibration.is_calibrated() && self.ph_calibration.is_calibrated() {
+                    self.state = MeasurementState::MeasureEc;
+                    MeasurementAction::MeasureEc
+                } else {
+                    MeasurementAction::StartPeriod
+                }
             }
             (MeasurementState::MeasureEc, MeasurementEvent::EcMeasured { ec }) => {
                 self.state = MeasurementState::MeasurePh { ec };

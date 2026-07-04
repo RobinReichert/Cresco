@@ -5,20 +5,20 @@ use crate::{
 
 pub enum MeasurementState {
     Idle,
-    MeasureEc,
-    MeasurePh { ec: Float },
-    CalibrateEcFirst,
-    CalibrateEcSecond { first: Float },
-    CalibratePhFirst,
-    CalibratePhSecond { first: Float },
+    MeasuringEc,
+    MeasuringPh { ec: Float },
+    CalibratingEcFirst,
+    CalibratingEcSecond { first: Float },
+    CalibratingPhFirst,
+    CalibratingPhSecond { first: Float },
 }
 
 pub enum MeasurementEvent {
-    Period,
+    StartMeasurement,
     StartEcCalibration,
     StartPhCalibration,
-    FirstRetrieved { first: Float },
-    SecondRetrieved { second: Float },
+    FirstMeasured { first: Float },
+    SecondMeasured { second: Float },
     Abort,
     EcMeasured { ec: Float },
     PhMeasured { ph: Float },
@@ -26,7 +26,7 @@ pub enum MeasurementEvent {
 
 pub enum MeasurementError {
     NotCalibratedYet,
-    FailedCalibration,
+    CalibrationFailed,
 }
 
 pub enum MeasurementAction {
@@ -34,12 +34,12 @@ pub enum MeasurementAction {
     MeasureEc,
     MeasurePh,
     WriteMeasurements { ec: Float, ph: Float },
-    ShowError { code: MeasurementError },
+    ShowError { error: MeasurementError },
     RetrieveEcFirst,
     RetrieveEcSecond,
     RetrievePhFirst,
     RetrievePhSecond,
-    StartPeriod,
+    WaitForNext,
 }
 
 pub struct MeasurementManager {
@@ -51,25 +51,25 @@ pub struct MeasurementManager {
 impl MeasurementManager {
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
-            (MeasurementState::Idle, MeasurementEvent::Period) => {
+            (MeasurementState::Idle, MeasurementEvent::StartMeasurement) => {
                 if self.ec_calibration.is_calibrated() && self.ph_calibration.is_calibrated() {
-                    self.state = MeasurementState::MeasureEc;
+                    self.state = MeasurementState::MeasuringEc;
                     MeasurementAction::MeasureEc
                 } else {
                     MeasurementAction::ShowError {
-                        code: MeasurementError::NotCalibratedYet,
+                        error: MeasurementError::NotCalibratedYet,
                     }
                 }
             }
-            (MeasurementState::MeasureEc, MeasurementEvent::EcMeasured { ec }) => {
-                self.state = MeasurementState::MeasurePh { ec };
+            (MeasurementState::MeasuringEc, MeasurementEvent::EcMeasured { ec }) => {
+                self.state = MeasurementState::MeasuringPh { ec };
                 MeasurementAction::MeasurePh
             }
-            (MeasurementState::MeasureEc, MeasurementEvent::Abort) => {
+            (MeasurementState::MeasuringEc, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
-            (MeasurementState::MeasurePh { ec }, MeasurementEvent::PhMeasured { ph }) => {
+            (MeasurementState::MeasuringPh { ec }, MeasurementEvent::PhMeasured { ph }) => {
                 let ec = *ec;
                 self.state = MeasurementState::Idle;
                 match (self.ec_calibration.apply(ec), self.ph_calibration.apply(ph)) {
@@ -80,29 +80,29 @@ impl MeasurementManager {
                         }
                     }
                     (_, _) => MeasurementAction::ShowError {
-                        code: MeasurementError::NotCalibratedYet,
+                        error: MeasurementError::NotCalibratedYet,
                     },
                 }
             }
-            (MeasurementState::MeasurePh { .. }, MeasurementEvent::Abort) => {
+            (MeasurementState::MeasuringPh { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
             (MeasurementState::Idle, MeasurementEvent::StartEcCalibration) => {
-                self.state = MeasurementState::CalibrateEcFirst;
+                self.state = MeasurementState::CalibratingEcFirst;
                 MeasurementAction::RetrieveEcFirst
             }
-            (MeasurementState::CalibrateEcFirst, MeasurementEvent::FirstRetrieved { first }) => {
-                self.state = MeasurementState::CalibrateEcSecond { first };
+            (MeasurementState::CalibratingEcFirst, MeasurementEvent::FirstMeasured { first }) => {
+                self.state = MeasurementState::CalibratingEcSecond { first };
                 MeasurementAction::RetrieveEcSecond
             }
-            (MeasurementState::CalibrateEcFirst, MeasurementEvent::Abort) => {
+            (MeasurementState::CalibratingEcFirst, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
             (
-                MeasurementState::CalibrateEcSecond { first },
-                MeasurementEvent::SecondRetrieved { second },
+                MeasurementState::CalibratingEcSecond { first },
+                MeasurementEvent::SecondMeasured { second },
             ) => {
                 let first = *first;
                 self.state = MeasurementState::Idle;
@@ -110,31 +110,31 @@ impl MeasurementManager {
                     .ec_calibration
                     .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
                 {
-                    Ok(_) => MeasurementAction::StartPeriod,
+                    Ok(_) => MeasurementAction::WaitForNext,
                     Err(_) => MeasurementAction::ShowError {
-                        code: MeasurementError::FailedCalibration,
+                        error: MeasurementError::CalibrationFailed,
                     },
                 }
             }
-            (MeasurementState::CalibrateEcSecond { .. }, MeasurementEvent::Abort) => {
+            (MeasurementState::CalibratingEcSecond { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
             (MeasurementState::Idle, MeasurementEvent::StartPhCalibration) => {
-                self.state = MeasurementState::CalibratePhFirst;
+                self.state = MeasurementState::CalibratingPhFirst;
                 MeasurementAction::RetrievePhFirst
             }
-            (MeasurementState::CalibratePhFirst, MeasurementEvent::FirstRetrieved { first }) => {
-                self.state = MeasurementState::CalibratePhSecond { first };
+            (MeasurementState::CalibratingPhFirst, MeasurementEvent::FirstMeasured { first }) => {
+                self.state = MeasurementState::CalibratingPhSecond { first };
                 MeasurementAction::RetrievePhSecond
             }
-            (MeasurementState::CalibratePhFirst, MeasurementEvent::Abort) => {
+            (MeasurementState::CalibratingPhFirst, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
             (
-                MeasurementState::CalibratePhSecond { first },
-                MeasurementEvent::SecondRetrieved { second },
+                MeasurementState::CalibratingPhSecond { first },
+                MeasurementEvent::SecondMeasured { second },
             ) => {
                 let first = *first;
                 self.state = MeasurementState::Idle;
@@ -142,15 +142,15 @@ impl MeasurementManager {
                     .ph_calibration
                     .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
                 {
-                    Ok(_) => MeasurementAction::StartPeriod,
+                    Ok(_) => MeasurementAction::WaitForNext,
                     Err(_) => MeasurementAction::ShowError {
-                        code: MeasurementError::FailedCalibration,
+                        error: MeasurementError::CalibrationFailed,
                     },
                 }
             }
-            (MeasurementState::CalibratePhSecond { .. }, MeasurementEvent::Abort) => {
+            (MeasurementState::CalibratingPhSecond { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
-                MeasurementAction::StartPeriod
+                MeasurementAction::WaitForNext
             }
             (_, _) => MeasurementAction::Ignore,
         }

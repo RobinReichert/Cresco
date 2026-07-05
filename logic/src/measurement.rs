@@ -9,9 +9,9 @@ pub enum MeasurementState {
     MeasuringEc,
     MeasuringPh { ec: Float },
     CalibratingEcFirst,
-    CalibratingEcSecond { first: Float },
+    CalibratingEcSecond { first: Float, actual_first: Float },
     CalibratingPhFirst,
-    CalibratingPhSecond { first: Float },
+    CalibratingPhSecond { first: Float, actual_first: Float },
 }
 
 pub enum MeasurementEvent {
@@ -19,8 +19,8 @@ pub enum MeasurementEvent {
     StartMeasurement,
     StartEcCalibration,
     StartPhCalibration,
-    FirstMeasured { first: Float },
-    SecondMeasured { second: Float },
+    FirstMeasured { first: Float, actual_first: Float },
+    SecondMeasured { second: Float, actual_second: Float },
     Abort,
     EcMeasured { ec: Float },
     PhMeasured { ph: Float },
@@ -108,8 +108,17 @@ impl MeasurementManager {
                 self.state = MeasurementState::CalibratingEcFirst;
                 MeasurementAction::RetrieveEcFirst
             }
-            (MeasurementState::CalibratingEcFirst, MeasurementEvent::FirstMeasured { first }) => {
-                self.state = MeasurementState::CalibratingEcSecond { first };
+            (
+                MeasurementState::CalibratingEcFirst,
+                MeasurementEvent::FirstMeasured {
+                    first,
+                    actual_first,
+                },
+            ) => {
+                self.state = MeasurementState::CalibratingEcSecond {
+                    first,
+                    actual_first,
+                };
                 MeasurementAction::RetrieveEcSecond
             }
             (MeasurementState::CalibratingEcFirst, MeasurementEvent::Abort) => {
@@ -117,15 +126,28 @@ impl MeasurementManager {
                 MeasurementAction::WaitForNext
             }
             (
-                MeasurementState::CalibratingEcSecond { first },
-                MeasurementEvent::SecondMeasured { second },
+                MeasurementState::CalibratingEcSecond {
+                    first,
+                    actual_first,
+                },
+                MeasurementEvent::SecondMeasured {
+                    second,
+                    actual_second,
+                },
             ) => {
                 let first = *first;
+                let actual_first = *actual_first;
                 self.state = MeasurementState::Idle;
-                match self
-                    .ec_calibration
-                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
-                {
+                match self.ec_calibration.calibrate(
+                    Point {
+                        y: actual_first,
+                        x: first,
+                    },
+                    Point {
+                        y: actual_second,
+                        x: second,
+                    },
+                ) {
                     Ok(_) => MeasurementAction::WaitForNext,
                     Err(_) => MeasurementAction::ShowError {
                         error: MeasurementError::CalibrationFailed,
@@ -140,8 +162,17 @@ impl MeasurementManager {
                 self.state = MeasurementState::CalibratingPhFirst;
                 MeasurementAction::RetrievePhFirst
             }
-            (MeasurementState::CalibratingPhFirst, MeasurementEvent::FirstMeasured { first }) => {
-                self.state = MeasurementState::CalibratingPhSecond { first };
+            (
+                MeasurementState::CalibratingPhFirst,
+                MeasurementEvent::FirstMeasured {
+                    first,
+                    actual_first,
+                },
+            ) => {
+                self.state = MeasurementState::CalibratingPhSecond {
+                    first,
+                    actual_first,
+                };
                 MeasurementAction::RetrievePhSecond
             }
             (MeasurementState::CalibratingPhFirst, MeasurementEvent::Abort) => {
@@ -149,15 +180,28 @@ impl MeasurementManager {
                 MeasurementAction::WaitForNext
             }
             (
-                MeasurementState::CalibratingPhSecond { first },
-                MeasurementEvent::SecondMeasured { second },
+                MeasurementState::CalibratingPhSecond {
+                    first,
+                    actual_first,
+                },
+                MeasurementEvent::SecondMeasured {
+                    second,
+                    actual_second,
+                },
             ) => {
                 let first = *first;
+                let actual_first = *actual_first;
                 self.state = MeasurementState::Idle;
-                match self
-                    .ph_calibration
-                    .calibrate(Point { y: 5.0, x: first }, Point { y: 4.0, x: second })
-                {
+                match self.ph_calibration.calibrate(
+                    Point {
+                        y: actual_first,
+                        x: first,
+                    },
+                    Point {
+                        y: actual_second,
+                        x: second,
+                    },
+                ) {
                     Ok(_) => MeasurementAction::WaitForNext,
                     Err(_) => MeasurementAction::ShowError {
                         error: MeasurementError::CalibrationFailed,

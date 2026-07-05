@@ -11,7 +11,8 @@ use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
     mk_static,
-    ph::{PhProbe, analog::AnalogPhProbe},
+    probe::AnalogProbe,
+    shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
     shared_flash::{SharedFlash, SharedFlashInterface},
     stepper::{Stepper, drv8833::Drv8833},
     storage::CredentialStorage,
@@ -120,7 +121,12 @@ async fn main(spawner: Spawner) -> ! {
     let mut stepper = Drv8833::new(ain1, ain2, bin1, bin2, 200);
     let _ = stepper.release().await;
 
-    let mut ph_probe = AnalogPhProbe::new(peripherals.ADC1, peripherals.GPIO0);
+    let mut adc_builder = AdcBuilder::new();
+    let ph_pin = adc_builder.add_pin(peripherals.GPIO0);
+    let ec_pin = adc_builder.add_pin(peripherals.GPIO1);
+    let shared_adc = mk_static!(SharedAdc<'static>, adc_builder.build(peripherals.ADC1));
+    let mut ph_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ph_pin);
+    let _ec_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ec_pin);
     loop {
         let _ = stepper.move_steps(-2500).await;
         let res = ph_probe.read().await.expect("ph probe should read");

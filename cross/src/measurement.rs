@@ -1,5 +1,5 @@
 use crate::{blackboard, probe::AnalogProbe};
-use defmt::info;
+use defmt::{info, panic};
 use embassy_futures::select::{Either, select};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Duration, Instant, Timer};
@@ -170,7 +170,7 @@ pub async fn measurement_task(
                 )
             }
             MeasurementAction::Ignore => {
-                info!("something went wrong")
+                panic!("invalid state, event combination");
             }
         }
     }

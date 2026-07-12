@@ -26,11 +26,13 @@ pub enum MeasurementEvent {
     PhMeasured { ph: Float },
 }
 
+#[derive(Debug, PartialEq)]
 pub enum MeasurementError {
     NotCalibratedYet,
     CalibrationFailed,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum MeasurementAction {
     Ignore,
     MeasureEc,
@@ -215,5 +217,321 @@ impl MeasurementManager {
             }
             (_, _) => MeasurementAction::Ignore,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn started_manager() -> MeasurementManager {
+        let mut manager = MeasurementManager::new();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Start),
+            MeasurementAction::WaitForNext
+        );
+        manager
+    }
+
+    // ec: raw 0.0 -> 0.0, raw 10.0 -> 100.0 (slope 10, intercept 0)
+    // ph: raw 0.0 -> 7.0, raw 10.0 -> 17.0 (slope 1, intercept 7)
+    fn calibrated_manager() -> MeasurementManager {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartEcCalibration),
+            MeasurementAction::RetrieveEcFirst
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FirstMeasured {
+                first: 0.0,
+                actual_first: 0.0,
+            }),
+            MeasurementAction::RetrieveEcSecond
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 100.0,
+            }),
+            MeasurementAction::WaitForNext
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartPhCalibration),
+            MeasurementAction::RetrievePhFirst
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FirstMeasured {
+                first: 0.0,
+                actual_first: 7.0,
+            }),
+            MeasurementAction::RetrievePhSecond
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 17.0,
+            }),
+            MeasurementAction::WaitForNext
+        );
+        manager
+    }
+
+    #[test]
+    fn test_start_transitions_to_idle_and_waits() {
+        started_manager();
+    }
+
+    #[test]
+    fn test_abort_while_idle_is_ignored_safely() {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_start_measurement_when_uncalibrated_shows_error() {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartMeasurement),
+            MeasurementAction::ShowError {
+                error: MeasurementError::NotCalibratedYet,
+            }
+        );
+    }
+
+    #[test]
+    fn test_start_measurement_when_calibrated_measures_ec() {
+        let mut manager = calibrated_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartMeasurement),
+            MeasurementAction::MeasureEc
+        );
+    }
+
+    #[test]
+    fn test_ec_measured_transitions_to_measuring_ph() {
+        let mut manager = calibrated_manager();
+        manager.handle_event(MeasurementEvent::StartMeasurement);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::EcMeasured { ec: 5.0 }),
+            MeasurementAction::MeasurePh
+        );
+    }
+
+    #[test]
+    fn test_abort_during_measuring_ec_returns_to_idle() {
+        let mut manager = calibrated_manager();
+        manager.handle_event(MeasurementEvent::StartMeasurement);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_ph_measured_writes_calibrated_measurements() {
+        let mut manager = calibrated_manager();
+        manager.handle_event(MeasurementEvent::StartMeasurement);
+        manager.handle_event(MeasurementEvent::EcMeasured { ec: 5.0 });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::PhMeasured { ph: 5.0 }),
+            MeasurementAction::WriteMeasurements { ec: 50.0, ph: 12.0 }
+        );
+    }
+
+    #[test]
+    fn test_abort_during_measuring_ph_returns_to_idle() {
+        let mut manager = calibrated_manager();
+        manager.handle_event(MeasurementEvent::StartMeasurement);
+        manager.handle_event(MeasurementEvent::EcMeasured { ec: 5.0 });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_start_ec_calibration_from_idle() {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartEcCalibration),
+            MeasurementAction::RetrieveEcFirst
+        );
+    }
+
+    #[test]
+    fn test_first_measured_during_ec_calibration_retrieves_second() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FirstMeasured {
+                first: 0.0,
+                actual_first: 0.0,
+            }),
+            MeasurementAction::RetrieveEcSecond
+        );
+    }
+
+    #[test]
+    fn test_abort_during_ec_calibration_first_returns_to_idle() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_second_measured_completes_ec_calibration_successfully() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 0.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 100.0,
+            }),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_second_measured_fails_ec_calibration_when_readings_identical() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 5.0,
+            actual_first: 0.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 5.0,
+                actual_second: 100.0,
+            }),
+            MeasurementAction::ShowError {
+                error: MeasurementError::CalibrationFailed,
+            }
+        );
+    }
+
+    #[test]
+    fn test_abort_during_ec_calibration_second_returns_to_idle() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 0.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_start_ph_calibration_from_idle() {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::StartPhCalibration),
+            MeasurementAction::RetrievePhFirst
+        );
+    }
+
+    #[test]
+    fn test_first_measured_during_ph_calibration_retrieves_second() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FirstMeasured {
+                first: 0.0,
+                actual_first: 7.0,
+            }),
+            MeasurementAction::RetrievePhSecond
+        );
+    }
+
+    #[test]
+    fn test_abort_during_ph_calibration_first_returns_to_idle() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_second_measured_completes_ph_calibration_successfully() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 7.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 17.0,
+            }),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_second_measured_fails_ph_calibration_when_readings_identical() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 5.0,
+            actual_first: 7.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 5.0,
+                actual_second: 17.0,
+            }),
+            MeasurementAction::ShowError {
+                error: MeasurementError::CalibrationFailed,
+            }
+        );
+    }
+
+    #[test]
+    fn test_abort_during_ph_calibration_second_returns_to_idle() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 7.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_unexpected_event_in_idle_is_ignored() {
+        let mut manager = started_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::EcMeasured { ec: 1.0 }),
+            MeasurementAction::Ignore
+        );
+    }
+
+    #[test]
+    fn test_unexpected_event_during_calibration_is_ignored() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::PhMeasured { ph: 1.0 }),
+            MeasurementAction::Ignore
+        );
     }
 }

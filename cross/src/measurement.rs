@@ -51,6 +51,7 @@ pub async fn measurement_task(
             }
             MeasurementAction::WriteMeasurements { ec, ph } => {
                 blackboard::set_ph(ph).await;
+                blackboard::set_ec(ec).await;
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::ShowError { error } => {}

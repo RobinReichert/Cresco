@@ -10,6 +10,7 @@
 use cross::{
     dhcp::dhcp_task,
     dns::dns_task,
+    measurement::{MeasurementCommand, MeasurementStatus, StatusCell, measurement_task},
     mk_static,
     probe::AnalogProbe,
     shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
@@ -22,7 +23,9 @@ use cross::{
 use defmt::info;
 use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, signal::Signal};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex, signal::Signal,
+};
 use embassy_time::{Duration, Timer};
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
@@ -125,12 +128,21 @@ async fn main(spawner: Spawner) -> ! {
     let ph_pin = adc_builder.add_pin(peripherals.GPIO0);
     let ec_pin = adc_builder.add_pin(peripherals.GPIO1);
     let shared_adc = mk_static!(SharedAdc<'static>, adc_builder.build(peripherals.ADC1));
-    let mut ph_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ph_pin);
-    let _ec_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ec_pin);
+    let ph_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ph_pin);
+    let ec_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ec_pin);
+
+    let commands = mk_static!(
+        Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
+        Channel::new()
+    );
+    let status = mk_static!(StatusCell, Mutex::new(MeasurementStatus::NotCalibratedYet));
+
+    spawner
+        .spawn(measurement_task(ph_probe, ec_probe, commands, status))
+        .ok();
+
     loop {
         let _ = stepper.move_steps(-2500).await;
-        let res = ph_probe.read().await.expect("ph probe should read");
-        info!("ph: {}", res);
         Timer::after(Duration::from_secs(5)).await;
     }
 }

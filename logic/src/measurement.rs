@@ -77,6 +77,7 @@ impl MeasurementManager {
                     }
                 }
             }
+            (MeasurementState::Idle, MeasurementEvent::Abort) => MeasurementAction::WaitForNext,
             (MeasurementState::MeasuringEc, MeasurementEvent::EcMeasured { ec }) => {
                 self.state = MeasurementState::MeasuringPh { ec };
                 MeasurementAction::MeasurePh

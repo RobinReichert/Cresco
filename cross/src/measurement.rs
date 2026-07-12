@@ -15,6 +15,7 @@ pub type ConcreteEcProbe<'a> = AnalogProbe<'a, GPIO1<'a>>;
 const MEASUREMENT_PERIOD: Duration = Duration::from_secs(60);
 
 pub enum MeasurementCommand {
+    Abort,
     StartEcCalibration,
     StartPhCalibration,
     EcMeasurement { actual_ec: Float },
@@ -42,8 +43,6 @@ pub async fn measurement_task(
 ) {
     let mut manager = MeasurementManager::new();
     let mut event: Option<MeasurementEvent> = Some(MeasurementEvent::Start);
-    // Tracks whether a calibration is in progress, since a successful calibration
-    // and a routine measurement cycle both end in the same generic WaitForNext.
     let mut calibrating = false;
     loop {
         match manager.handle_event(event.take().expect("no event: this should not happen")) {
@@ -189,6 +188,7 @@ async fn next_trigger(
             Either::Second(MeasurementCommand::StartPhCalibration) => {
                 return MeasurementEvent::StartPhCalibration;
             }
+            Either::Second(MeasurementCommand::Abort) => return MeasurementEvent::Abort,
             Either::Second(_) => info!("something went wrong"),
         }
     }

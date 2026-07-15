@@ -10,3 +10,6 @@ pub async fn snapshot() -> Measurements {
 pub async fn set_ph(ph: Float) {
     MEASUREMENTS.lock().await.ph = Some(ph)
 }
+pub async fn set_ec(ec: Float) {
+    MEASUREMENTS.lock().await.ec = Some(ec)
+}

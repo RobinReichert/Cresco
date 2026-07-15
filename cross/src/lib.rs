@@ -4,8 +4,10 @@
 pub mod blackboard;
 pub mod dhcp;
 pub mod dns;
+pub mod measurement;
 pub mod partitions;
-pub mod ph;
+pub mod probe;
+pub mod shared_adc;
 pub mod shared_flash;
 pub mod stepper;
 pub mod storage;

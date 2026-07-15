@@ -16,6 +16,10 @@ impl Linear {
         Self { m: None, t: None }
     }
 
+    pub fn is_calibrated(&self) -> bool {
+        self.m.is_some() && self.t.is_some()
+    }
+
     pub fn calibrate(&mut self, first: Point, second: Point) -> Result<(), ()> {
         if second.x == first.x {
             return Err(());
@@ -50,6 +54,30 @@ mod test {
     fn test_apply_before_calibrate_errors() {
         let linear = Linear::new();
         assert_eq!(linear.apply(1.0), Err(()));
+    }
+
+    #[test]
+    fn test_is_calibrated_before_calibrate_is_false() {
+        let linear = Linear::new();
+        assert!(!linear.is_calibrated());
+    }
+
+    #[test]
+    fn test_is_calibrated_after_calibrate_is_true() {
+        let mut linear = Linear::new();
+        let first = Point { x: 0.0, y: 0.0 };
+        let second = Point { x: 2.0, y: 4.0 };
+        assert_eq!(linear.calibrate(first, second), Ok(()));
+        assert!(linear.is_calibrated());
+    }
+
+    #[test]
+    fn test_is_calibrated_after_failed_calibrate_is_false() {
+        let mut linear = Linear::new();
+        let first = Point { x: 1.0, y: 0.0 };
+        let second = Point { x: 1.0, y: 5.0 };
+        assert_eq!(linear.calibrate(first, second), Err(()));
+        assert!(!linear.is_calibrated());
     }
 
     #[test]

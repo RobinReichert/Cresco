@@ -812,8 +812,6 @@ mod test {
 
 pub mod mdns {
 
-    use defmt::info;
-
     use super::*;
 
     const MAX_RESPONSE_SIZE: usize = 256;

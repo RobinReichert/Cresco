@@ -817,6 +817,7 @@ pub mod mdns {
     use super::*;
 
     const MAX_RESPONSE_SIZE: usize = 256;
+    const TTL: u32 = 120;
 
     pub struct MdnsServer {}
 
@@ -830,21 +831,23 @@ pub mod mdns {
                 Ok(m) => m,
                 Err(_) => return DnsAction::Ignore,
             };
-            info!("asw: {:?}", message);
             if message.message_type != DnsMessageType::Query {
                 return DnsAction::Ignore;
             }
             let mut answers = Vec::new();
             for question in message.questions.iter() {
                 let name = question.name.clone();
-                if name.labels.len() == 2
-                    && question.question_type == DnsQuestionType::A
-                    && "cresco".eq_ignore_ascii_case(name.labels[0])
-                    && "local".eq_ignore_ascii_case(name.labels[1])
+                if question.question_type == DnsQuestionType::A
+                    && is_own_name(&name)
+                    && !message.answers.iter().any(|answer| {
+                        is_own_name(&answer.name)
+                            && answer.record == DnsRecord::A { addr: ip }
+                            && answer.ttl >= TTL / 2
+                    })
                 {
                     let _ = answers.push(DnsAnswer {
                         name,
-                        ttl: 120,
+                        ttl: TTL,
                         record: DnsRecord::A { addr: ip },
                     });
                 }
@@ -867,7 +870,6 @@ pub mod mdns {
                 questions:              Vec::new(),
                 answers,
             };
-            info!("resp: {}", response);
             let mut payload = [0u8; MAX_RESPONSE_SIZE];
             let len = match response.emit(&mut payload) {
                 Ok(l) => l,
@@ -875,6 +877,12 @@ pub mod mdns {
             };
             DnsAction::SendPacket { payload, len }
         }
+    }
+
+    fn is_own_name(name: &NameView) -> bool {
+        name.labels.len() == 2
+            && "cresco".eq_ignore_ascii_case(name.labels[0])
+            && "local".eq_ignore_ascii_case(name.labels[1])
     }
 
     #[cfg(test)]

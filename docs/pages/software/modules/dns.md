@@ -117,3 +117,45 @@ opcode, and `RD` flag, and sets `AA` and `RA` to `true`.
 > The TTL of `0` prevents clients from caching the poisoned response,
 > which ensures they re-query on each connection attempt - useful
 > if the portal IP changes or the device restarts.
+
+## Mdns Server
+
+mDNS (multicast DNS, [RFC 6762](https://www.rfc-editor.org/rfc/rfc6762))
+reuses the DNS wire format described above,
+but is transported over UDP multicast (`224.0.0.251:5353`)
+instead of being sent to a configured resolver.
+This lets other devices on the network resolve the
+device's hostname (`<hostname>.local`) without a DNS server,
+which is how the device stays reachable by name after joining
+the user's Wi-Fi network with a dynamically assigned, DHCP IP.
+
+The `MdnsServer` runs on the STA stack
+(the interface connected to the user's Wi-Fi),
+not the AP stack `PoisonedDnsServer` runs on.
+
+**Behaviour:**
+
+- Parses the incoming packet.
+Returns `DnsAction::Ignore` if it cannot be parsed
+— most multicast traffic on the group is other
+devices' announcements using record types this codec does not
+implement (e.g. `PTR`, `SRV`), so this is the common case.
+- Ignores anything that is not a `Query`,
+since responses from other devices arrive on the same multicast group.
+- Scans **every** question in the packet for one that is type `A` and whose
+name matches the device's own hostname.
+A single query packet commonly bundles several questions for
+the same name (e.g. `HTTPS`, `AAAA`, `A`) — only the `A` question is answered.
+- Applies known-answer suppression
+([RFC 6762 section 7.1](https://www.rfc-editor.org/rfc/rfc6762#section-7.1)):
+if the querying packet already lists the same `A` record with a TTL of at
+least half the server's TTL, no response is sent for that question.
+- Responds with an `A` record mapping the hostname to the device's
+current IP with a TTL of `120`.
+The current IP is passed into `handle_message` on every call rather than
+fixed at construction, since the STA address is DHCP-assigned
+and can change after a reconnect.
+- Per [RFC 6762 section 6](https://www.rfc-editor.org/rfc/rfc6762#section-6),
+responses must not include a question section,
+so it is left empty.
+- Returns `DnsAction::Ignore` if no question produced an answer.

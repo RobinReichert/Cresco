@@ -55,21 +55,25 @@ pub(super) struct NameView<'a> {
 impl<'a> NameView<'a> {
     const TERMINATOR: u8 = 0x00;
     const POINTER_MASK: u8 = 0xC0;
-    const OFFSET_MASK: u8 = 0xC0;
+    const OFFSET_MASK: u8 = 0x3F;
     const POINTER_SHIFT: u8 = 8;
 
     pub fn from_bytes(buffer: &'a [u8], mut offset: usize) -> Option<(Self, usize)> {
         let mut labels = Vec::new();
+        let mut name_end = None;
         loop {
             let byte = *buffer.get(offset)?;
             if byte == Self::TERMINATOR {
-                return Some((Self { labels }, offset + 1));
+                return Some((Self { labels }, name_end.unwrap_or(offset + 1)));
             } else if byte & Self::POINTER_MASK != 0 {
                 if offset + 2 > buffer.len() {
                     return None;
                 }
                 let target = (((byte & Self::OFFSET_MASK) as usize) << Self::POINTER_SHIFT)
                     | buffer[offset + 1] as usize;
+                if name_end.is_none() {
+                    name_end = Some(offset + 2);
+                }
                 offset = target;
             } else {
                 let len = byte as usize;
@@ -109,6 +113,7 @@ pub(super) enum DnsQuestionType {
     Cname,
     Mx,
     Txt,
+    Other(u16),
 }
 
 impl<'a> DnsQuestionType {
@@ -124,7 +129,7 @@ impl<'a> DnsQuestionType {
             CNAME_CODE    => Self::Cname,
             MX_CODE       => Self::Mx,
             TXT_CODE      => Self::Txt,
-            _                   => return None,
+            o                   => Self::Other(o),
         };
         Some((q_type, offset + 2))
     }
@@ -140,6 +145,7 @@ impl<'a> DnsQuestionType {
                 &Self::Cname    => CNAME_CODE,
                 &Self::Mx       => MX_CODE,
                 &Self::Txt      => TXT_CODE,
+                &Self::Other(o) => o,
             };
         data[offset..offset + 2].copy_from_slice(&q_type.to_be_bytes());
         Ok(offset + 2)
@@ -801,5 +807,216 @@ mod test {
                 answers: Vec::new(),
             }
         );
+    }
+}
+
+pub mod mdns {
+
+    use super::*;
+
+    const MAX_RESPONSE_SIZE: usize = 256;
+    const TTL: u32 = 120;
+
+    pub struct MdnsServer {}
+
+    impl MdnsServer {
+        pub fn new() -> Self {
+            Self {}
+        }
+
+        pub fn handle_message(&mut self, buffer: &[u8], ip: Ipv4Addr) -> DnsAction {
+            let message = match DnsRepr::from_bytes(&buffer) {
+                Ok(m) => m,
+                Err(_) => return DnsAction::Ignore,
+            };
+            if message.message_type != DnsMessageType::Query {
+                return DnsAction::Ignore;
+            }
+            let mut answers = Vec::new();
+            for question in message.questions.iter() {
+                let name = question.name.clone();
+                if question.question_type == DnsQuestionType::A
+                    && is_own_name(&name)
+                    && !message.answers.iter().any(|answer| {
+                        is_own_name(&answer.name)
+                            && answer.record == DnsRecord::A { addr: ip }
+                            && answer.ttl >= TTL / 2
+                    })
+                {
+                    let _ = answers.push(DnsAnswer {
+                        name,
+                        ttl: TTL,
+                        record: DnsRecord::A { addr: ip },
+                    });
+                }
+            }
+            if answers.is_empty() {
+                return DnsAction::Ignore;
+            }
+            #[rustfmt::skip]
+            let response = DnsRepr {
+                identification:         0,
+                message_type:           DnsMessageType::Response,
+                message_option:         message.message_option,
+                authorative:            true,
+                truncated:              false,
+                recursion_desired:      false,
+                recursion_available:    false,
+                response_code:          DnsResponseCode::Ok,
+                question_record_count:  0,
+                answer_record_count:    answers.len() as u16,
+                questions:              Vec::new(),
+                answers,
+            };
+            let mut payload = [0u8; MAX_RESPONSE_SIZE];
+            let len = match response.emit(&mut payload) {
+                Ok(l) => l,
+                Err(_) => return DnsAction::Ignore,
+            };
+            DnsAction::SendPacket { payload, len }
+        }
+    }
+
+    fn is_own_name(name: &NameView) -> bool {
+        name.labels.len() == 2
+            && "cresco".eq_ignore_ascii_case(name.labels[0])
+            && "local".eq_ignore_ascii_case(name.labels[1])
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+
+        const TEST_IP: Ipv4Addr = Ipv4Addr::new(10, 100, 237, 173);
+
+        /// A browser resolving `cresco.local` sends three questions in a single packet -
+        /// HTTPS (65), AAAA and A - and compresses the name of the second and third into
+        /// pointers back to the first.
+        #[rustfmt::skip]
+        const BROWSER_QUERY: [u8; 42] = [
+            0x00, 0x00,                                     // identification
+            0x00, 0x00,                                     // flags: query
+            0x00, 0x03,                                     // three questions
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x06, b'c', b'r', b'e', b's', b'c', b'o',
+            0x05, b'l', b'o', b'c', b'a', b'l',
+            0x00,
+            0x00, 0x41, 0x80, 0x01,                         // HTTPS, IN + QU bit
+            0xC0, 0x0C, 0x00, 0x1C, 0x80, 0x01,             // -> cresco.local, AAAA
+            0xC0, 0x0C, 0x00, 0x01, 0x80, 0x01,             // -> cresco.local, A
+        ];
+
+        fn query_for(name: &[&str], question_type: u16) -> ([u8; 64], usize) {
+            let mut buffer = [0u8; 64];
+            buffer[5] = 0x01;
+            let mut offset = 12;
+            for label in name {
+                buffer[offset] = label.len() as u8;
+                buffer[offset + 1..offset + 1 + label.len()].copy_from_slice(label.as_bytes());
+                offset += 1 + label.len();
+            }
+            offset += 1;
+            buffer[offset..offset + 2].copy_from_slice(&question_type.to_be_bytes());
+            buffer[offset + 2..offset + 4].copy_from_slice(&IN_FLAG_VALUE.to_be_bytes());
+            (buffer, offset + 4)
+        }
+
+        #[test]
+        fn test_browser_query_should_be_answered_with_the_current_ip() {
+            let mut server = MdnsServer::new();
+            let response = server.handle_message(&BROWSER_QUERY, TEST_IP);
+            let DnsAction::SendPacket { payload, .. } = response else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.message_type, DnsMessageType::Response);
+            assert!(result.authorative);
+            assert_eq!(result.identification, 0);
+            assert_eq!(result.answer_record_count, 1);
+            let answer: &DnsAnswer = result.answers.get(0).expect("no answers in response");
+            assert_eq!(answer.record, DnsRecord::A { addr: TEST_IP });
+            assert_eq!(answer.name.labels.as_slice(), ["cresco", "local"]);
+        }
+
+        #[test]
+        fn test_response_should_have_a_non_zero_ttl() {
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket { payload, .. } =
+                server.handle_message(&BROWSER_QUERY, TEST_IP)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            let answer: &DnsAnswer = result.answers.get(0).expect("no answers in response");
+            assert_ne!(answer.ttl, 0);
+        }
+
+        #[test]
+        fn test_response_should_not_contain_questions() {
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket { payload, .. } =
+                server.handle_message(&BROWSER_QUERY, TEST_IP)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.question_record_count, 0);
+            assert!(result.questions.is_empty());
+        }
+
+        #[test]
+        fn test_query_for_another_host_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            #[rustfmt::skip]
+            let bytes: [u8; 47] = [
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0B, 0x74, 0x65, 0x73, 0x74, 0x2D, 0x63, 0x72, 0x65, 0x73, 0x63, 0x6F,
+                0x05, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x00,
+                0x00, 0x41, 0x80, 0x01,
+                0xC0, 0x0C, 0x00, 0x1C, 0x80, 0x01,
+                0xC0, 0x0C, 0x00, 0x01, 0x80, 0x01,
+            ];
+            let response = server.handle_message(&bytes, TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_query_for_a_subdomain_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["cresco", "local", "example"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_query_without_an_a_question_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["cresco", "local"], AAAA_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_single_label_query_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["local"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_hostname_should_match_case_insensitively() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["CRESCO", "LOCAL"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::SendPacket { .. }));
+        }
+
+        #[test]
+        fn test_garbage_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let response = server.handle_message(&[0x00, 0x01, 0x02], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
     }
 }

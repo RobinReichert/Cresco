@@ -9,7 +9,7 @@
 
 use cross::{
     dhcp::dhcp_task,
-    dns::dns_task,
+    dns::{dns_task, mdns_task},
     measurement::{MeasurementCommand, MeasurementStatus, StatusCell, measurement_task},
     mk_static,
     probe::AnalogProbe,
@@ -73,7 +73,7 @@ async fn main(spawner: Spawner) -> ! {
     );
     let rng = Rng::new();
 
-    let (wifi_controller, ap_stack, _sta_stack) =
+    let (wifi_controller, ap_stack, sta_stack) =
         wifi::start_wifi(radio_init, peripherals.WIFI, rng, &spawner).await;
 
     let flash_blocking = FlashStorage::new(peripherals.FLASH);
@@ -103,6 +103,7 @@ async fn main(spawner: Spawner) -> ! {
 
     spawner.spawn(dhcp_task(ap_stack)).ok();
     spawner.spawn(dns_task(ap_stack)).ok();
+    spawner.spawn(mdns_task(sta_stack)).ok();
 
     let captive_app = mk_static!(
         AppRouter<CaptiveApp>,

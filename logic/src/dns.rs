@@ -837,7 +837,7 @@ pub mod mdns {
             let mut answers = Vec::new();
             for question in message.questions.iter() {
                 let name = question.name.clone();
-                if name.labels.len() >= 2
+                if name.labels.len() == 2
                     && question.question_type == DnsQuestionType::A
                     && "cresco".eq_ignore_ascii_case(name.labels[0])
                     && "local".eq_ignore_ascii_case(name.labels[1])
@@ -874,6 +874,143 @@ pub mod mdns {
                 Err(_) => return DnsAction::Ignore,
             };
             DnsAction::SendPacket { payload, len }
+        }
+    }
+
+    #[cfg(test)]
+    mod test {
+        use super::*;
+
+        const TEST_IP: Ipv4Addr = Ipv4Addr::new(10, 100, 237, 173);
+
+        /// A browser resolving `cresco.local` sends three questions in a single packet -
+        /// HTTPS (65), AAAA and A - and compresses the name of the second and third into
+        /// pointers back to the first.
+        #[rustfmt::skip]
+        const BROWSER_QUERY: [u8; 42] = [
+            0x00, 0x00,                                     // identification
+            0x00, 0x00,                                     // flags: query
+            0x00, 0x03,                                     // three questions
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x06, b'c', b'r', b'e', b's', b'c', b'o',
+            0x05, b'l', b'o', b'c', b'a', b'l',
+            0x00,
+            0x00, 0x41, 0x80, 0x01,                         // HTTPS, IN + QU bit
+            0xC0, 0x0C, 0x00, 0x1C, 0x80, 0x01,             // -> cresco.local, AAAA
+            0xC0, 0x0C, 0x00, 0x01, 0x80, 0x01,             // -> cresco.local, A
+        ];
+
+        fn query_for(name: &[&str], question_type: u16) -> ([u8; 64], usize) {
+            let mut buffer = [0u8; 64];
+            buffer[5] = 0x01;
+            let mut offset = 12;
+            for label in name {
+                buffer[offset] = label.len() as u8;
+                buffer[offset + 1..offset + 1 + label.len()].copy_from_slice(label.as_bytes());
+                offset += 1 + label.len();
+            }
+            offset += 1;
+            buffer[offset..offset + 2].copy_from_slice(&question_type.to_be_bytes());
+            buffer[offset + 2..offset + 4].copy_from_slice(&IN_FLAG_VALUE.to_be_bytes());
+            (buffer, offset + 4)
+        }
+
+        #[test]
+        fn test_browser_query_should_be_answered_with_the_current_ip() {
+            let mut server = MdnsServer::new();
+            let response = server.handle_message(&BROWSER_QUERY, TEST_IP);
+            let DnsAction::SendPacket { payload, .. } = response else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.message_type, DnsMessageType::Response);
+            assert!(result.authorative);
+            assert_eq!(result.identification, 0);
+            assert_eq!(result.answer_record_count, 1);
+            let answer: &DnsAnswer = result.answers.get(0).expect("no answers in response");
+            assert_eq!(answer.record, DnsRecord::A { addr: TEST_IP });
+            assert_eq!(answer.name.labels.as_slice(), ["cresco", "local"]);
+        }
+
+        #[test]
+        fn test_response_should_have_a_non_zero_ttl() {
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket { payload, .. } =
+                server.handle_message(&BROWSER_QUERY, TEST_IP)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            let answer: &DnsAnswer = result.answers.get(0).expect("no answers in response");
+            assert_ne!(answer.ttl, 0);
+        }
+
+        #[test]
+        fn test_response_should_not_contain_questions() {
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket { payload, .. } =
+                server.handle_message(&BROWSER_QUERY, TEST_IP)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.question_record_count, 0);
+            assert!(result.questions.is_empty());
+        }
+
+        #[test]
+        fn test_query_for_another_host_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            #[rustfmt::skip]
+            let bytes: [u8; 47] = [
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0B, 0x74, 0x65, 0x73, 0x74, 0x2D, 0x63, 0x72, 0x65, 0x73, 0x63, 0x6F,
+                0x05, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x00,
+                0x00, 0x41, 0x80, 0x01,
+                0xC0, 0x0C, 0x00, 0x1C, 0x80, 0x01,
+                0xC0, 0x0C, 0x00, 0x01, 0x80, 0x01,
+            ];
+            let response = server.handle_message(&bytes, TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_query_for_a_subdomain_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["cresco", "local", "example"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_query_without_an_a_question_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["cresco", "local"], AAAA_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_single_label_query_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["local"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
+        }
+
+        #[test]
+        fn test_hostname_should_match_case_insensitively() {
+            let mut server = MdnsServer::new();
+            let (bytes, len) = query_for(&["CRESCO", "LOCAL"], A_CODE);
+            let response = server.handle_message(&bytes[..len], TEST_IP);
+            assert!(matches!(response, DnsAction::SendPacket { .. }));
+        }
+
+        #[test]
+        fn test_garbage_should_be_ignored() {
+            let mut server = MdnsServer::new();
+            let response = server.handle_message(&[0x00, 0x01, 0x02], TEST_IP);
+            assert!(matches!(response, DnsAction::Ignore));
         }
     }
 }

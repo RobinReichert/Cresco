@@ -180,7 +180,7 @@ pub async fn connection(
     }
 }
 
-#[embassy_executor::task]
+#[embassy_executor::task(pool_size = 2)]
 async fn net_task(mut runner: Runner<'static, WifiDevice<'static>>) -> ! {
     runner.run().await
 }

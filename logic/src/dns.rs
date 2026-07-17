@@ -55,21 +55,25 @@ pub(super) struct NameView<'a> {
 impl<'a> NameView<'a> {
     const TERMINATOR: u8 = 0x00;
     const POINTER_MASK: u8 = 0xC0;
-    const OFFSET_MASK: u8 = 0xC0;
+    const OFFSET_MASK: u8 = 0x3F;
     const POINTER_SHIFT: u8 = 8;
 
     pub fn from_bytes(buffer: &'a [u8], mut offset: usize) -> Option<(Self, usize)> {
         let mut labels = Vec::new();
+        let mut name_end = None;
         loop {
             let byte = *buffer.get(offset)?;
             if byte == Self::TERMINATOR {
-                return Some((Self { labels }, offset + 1));
+                return Some((Self { labels }, name_end.unwrap_or(offset + 1)));
             } else if byte & Self::POINTER_MASK != 0 {
                 if offset + 2 > buffer.len() {
                     return None;
                 }
                 let target = (((byte & Self::OFFSET_MASK) as usize) << Self::POINTER_SHIFT)
                     | buffer[offset + 1] as usize;
+                if name_end.is_none() {
+                    name_end = Some(offset + 2);
+                }
                 offset = target;
             } else {
                 let len = byte as usize;
@@ -109,6 +113,7 @@ pub(super) enum DnsQuestionType {
     Cname,
     Mx,
     Txt,
+    Other(u16),
 }
 
 impl<'a> DnsQuestionType {
@@ -124,7 +129,7 @@ impl<'a> DnsQuestionType {
             CNAME_CODE    => Self::Cname,
             MX_CODE       => Self::Mx,
             TXT_CODE      => Self::Txt,
-            _                   => return None,
+            o                   => Self::Other(o),
         };
         Some((q_type, offset + 2))
     }
@@ -140,6 +145,7 @@ impl<'a> DnsQuestionType {
                 &Self::Cname    => CNAME_CODE,
                 &Self::Mx       => MX_CODE,
                 &Self::Txt      => TXT_CODE,
+                &Self::Other(o) => o,
             };
         data[offset..offset + 2].copy_from_slice(&q_type.to_be_bytes());
         Ok(offset + 2)
@@ -801,5 +807,73 @@ mod test {
                 answers: Vec::new(),
             }
         );
+    }
+}
+
+pub mod mdns {
+
+    use defmt::info;
+
+    use super::*;
+
+    const MAX_RESPONSE_SIZE: usize = 256;
+
+    pub struct MdnsServer {}
+
+    impl MdnsServer {
+        pub fn new() -> Self {
+            Self {}
+        }
+
+        pub fn handle_message(&mut self, buffer: &[u8], ip: Ipv4Addr) -> DnsAction {
+            let message = match DnsRepr::from_bytes(&buffer) {
+                Ok(m) => m,
+                Err(_) => return DnsAction::Ignore,
+            };
+            info!("asw: {:?}", message);
+            if message.message_type != DnsMessageType::Query {
+                return DnsAction::Ignore;
+            }
+            let mut answers = Vec::new();
+            for question in message.questions.iter() {
+                let name = question.name.clone();
+                if name.labels.len() >= 2
+                    && question.question_type == DnsQuestionType::A
+                    && "cresco".eq_ignore_ascii_case(name.labels[0])
+                    && "local".eq_ignore_ascii_case(name.labels[1])
+                {
+                    let _ = answers.push(DnsAnswer {
+                        name,
+                        ttl: 120,
+                        record: DnsRecord::A { addr: ip },
+                    });
+                }
+            }
+            if answers.is_empty() {
+                return DnsAction::Ignore;
+            }
+            #[rustfmt::skip]
+            let response = DnsRepr {
+                identification:         0,
+                message_type:           DnsMessageType::Response,
+                message_option:         message.message_option,
+                authorative:            true,
+                truncated:              false,
+                recursion_desired:      false,
+                recursion_available:    false,
+                response_code:          DnsResponseCode::Ok,
+                question_record_count:  0,
+                answer_record_count:    answers.len() as u16,
+                questions:              Vec::new(),
+                answers,
+            };
+            info!("resp: {}", response);
+            let mut payload = [0u8; MAX_RESPONSE_SIZE];
+            let len = match response.emit(&mut payload) {
+                Ok(l) => l,
+                Err(_) => return DnsAction::Ignore,
+            };
+            DnsAction::SendPacket { payload, len }
+        }
     }
 }

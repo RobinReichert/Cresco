@@ -74,20 +74,19 @@ pub async fn mdns_task(stack: Stack<'static>) {
         loop {
             let event = select(socket.recv_from(&mut in_buf), stack.wait_config_down()).await;
 
-            let n = match event {
-                Either::First(Ok((n, _remote))) => n,
+            let (n, remote) = match event {
+                Either::First(Ok((n, remote))) => (n, remote),
                 Either::First(Err(_)) => continue,
                 Either::Second(()) => break,
             };
-
             let Some(config) = stack.config_v4() else {
                 continue;
             };
 
-            if let DnsAction::SendPacket { payload, len } =
-                mdns_server.handle_message(&in_buf[..n], config.address.address())
-            {
-                let _ = socket.send_to(&payload[..len], destination).await;
+            let action = mdns_server.handle_message(&in_buf[..n], config.address.address());
+
+            if let DnsAction::SendPacket { payload, len } = action {
+                let result = socket.send_to(&payload[..len], remote.endpoint).await;
             }
         }
 

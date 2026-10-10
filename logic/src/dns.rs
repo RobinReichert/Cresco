@@ -812,10 +812,12 @@ mod test {
 
 pub mod mdns {
 
+    use defmt::info;
+
     use super::*;
 
     const MAX_RESPONSE_SIZE: usize = 256;
-    const TTL: u32 = 120;
+    const TTL: u32 = 5;
 
     pub struct MdnsServer {}
 
@@ -829,6 +831,7 @@ pub mod mdns {
                 Ok(m) => m,
                 Err(_) => return DnsAction::Ignore,
             };
+            info!("message: {:?}", message);
             if message.message_type != DnsMessageType::Query {
                 return DnsAction::Ignore;
             }
@@ -855,7 +858,7 @@ pub mod mdns {
             }
             #[rustfmt::skip]
             let response = DnsRepr {
-                identification:         0,
+                identification:         message.identification,
                 message_type:           DnsMessageType::Response,
                 message_option:         message.message_option,
                 authorative:            true,
@@ -863,11 +866,12 @@ pub mod mdns {
                 recursion_desired:      false,
                 recursion_available:    false,
                 response_code:          DnsResponseCode::Ok,
-                question_record_count:  0,
+                question_record_count:  message.question_record_count,
                 answer_record_count:    answers.len() as u16,
-                questions:              Vec::new(),
+                questions:              message.questions,
                 answers,
             };
+            info!("response: {:?}", response);
             let mut payload = [0u8; MAX_RESPONSE_SIZE];
             let len = match response.emit(&mut payload) {
                 Ok(l) => l,

@@ -9,7 +9,9 @@ use esp_hal::rng::Rng;
 use esp_println as _;
 use esp_radio::wifi::{
     AccessPointConfig, ClientConfig, ModeConfig, ScanConfig, WifiController, WifiDevice, WifiEvent,
-    WifiStaState, sta_state,
+    WifiStaState,
+    event::{self, EventExt},
+    sta_state,
 };
 use esp_storage::FlashStorage;
 use heapless::String;
@@ -37,6 +39,10 @@ pub async fn start_wifi(
     let (wifi_controller, interfaces) = esp_radio::wifi::new(radio_init, wifi, Default::default())
         .expect("Failed to initialize Wi-Fi controller");
 
+    event::StaDisconnected::update_handler(|event| {
+        defmt::warn!("STA disconnected, reason = {}", event.reason());
+    });
+
     let ip_addr = Ipv4Cidr::new(SERVER_IP, 24);
     let net_config = embassy_net::Config::ipv4_static(StaticConfigV4 {
         address: ip_addr,
@@ -53,7 +59,7 @@ pub async fn start_wifi(
     let (sta_stack, sta_runner) = embassy_net::new(
         interfaces.sta,
         embassy_net::Config::dhcpv4(Default::default()),
-        mk_static!(StackResources<3>, StackResources::<3>::new()),
+        mk_static!(StackResources<6>, StackResources::<6>::new()),
         rng.random() as u64 | ((rng.random() as u64) << 32),
     );
 

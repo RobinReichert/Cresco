@@ -6,7 +6,14 @@
   --color-primary-hover: var(--color-green-700);
   --color-secondary: var(--color-cyan-500);
   --color-secondary-hover: var(--color-cyan-600);
+  --color-canvas: var(--color-stone-100);
   --color-label: var(--color-gray-600);
   --color-border: var(--color-gray-400);
   --color-border-focus: var(--color-secondary);
+  --color-ok: var(--color-green-600);
+  --color-ok-soft: var(--color-green-50);
+  --color-warn: var(--color-amber-600);
+  --color-warn-soft: var(--color-amber-50);
+  --color-danger: var(--color-red-600);
+  --color-danger-soft: var(--color-red-50);
 }

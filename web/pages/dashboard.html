@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cresco Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-canvas min-h-screen m-0 p-4 sm:p-6">
+    <div class="max-w-2xl mx-auto">
+        <header class="relative mb-4 text-center">
+            <!-- Settings: needs a /settings route in the firmware before it does anything. -->
+            <a href="/settings" aria-label="Settings"
+               class="absolute right-0 top-0 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 ring-1 ring-black/5 shadow-sm text-label hover:text-primary transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.9 15.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+                </svg>
+            </a>
+            <h1 class="text-gray-800 text-xl font-semibold">Cresco</h1>
+        </header>
+
+        <section class="mb-4">
+            <div class="relative flex items-center justify-center gap-5 sm:gap-10 pt-2 pb-6">
+                <!-- Basil plant. Built from web/assets/basil.png (2500x2500 RGBA): cropped to its alpha
+                     bounds, resized to 320px wide (2x the rendered w-40), WebP q80, written to
+                     web/assets/plant.webp and served at /plant.webp. Re-run the encode if the source changes. -->
+                <img src="/plant.webp" alt="Basil plant" class="w-40 h-auto shrink-0">
+
+                <div class="shrink-0 space-y-6">
+                    <div>
+                        <p class="text-label text-xs font-bold">pH</p>
+                        <p class="text-gray-800 text-2xl font-semibold tabular-nums leading-none mt-1">6.2</p>
+                        <span class="inline-block bg-ok-soft text-ok text-xs font-semibold rounded-full px-2 py-0.5 mt-2">In range</span>
+                    </div>
+                    <div>
+                        <p class="text-label text-xs font-bold">EC</p>
+                        <p class="text-danger text-lg font-semibold leading-none mt-2">Not calibrated</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="bg-white/70 backdrop-blur-md ring-1 ring-black/5 shadow-sm rounded-2xl p-5 mb-4">
+            <p class="text-gray-800 font-bold text-sm mb-3">System</p>
+            <div class="flex items-center justify-between py-2 border-b border-black/5">
+                <span class="text-label text-sm">Dosing pump</span>
+                <span class="text-gray-800 text-sm font-semibold">Idle</span>
+            </div>
+            <div class="flex items-center justify-between py-2">
+                <span class="text-label text-sm">Last reading</span>
+                <span class="text-gray-800 text-sm font-semibold">42s ago</span>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

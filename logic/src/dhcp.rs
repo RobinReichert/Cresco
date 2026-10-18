@@ -220,10 +220,15 @@ pub mod simple {
         let (response, new_timestamp, remote) =
             if request_message.client_hardware_address.as_bytes() == mac {
                 info!("extending lease duration");
+                let remote = if request_message.client_ip.is_unspecified() {
+                    Ipv4Addr::BROADCAST
+                } else {
+                    CLIENT_IP
+                };
                 (
                     new_repr(DhcpMessageType::Ack, request_message.clone()),
                     time,
-                    CLIENT_IP,
+                    remote,
                 )
             } else {
                 info!("received invalid request");
@@ -566,14 +571,63 @@ pub mod simple {
                 .emit(&mut request_packet)
                 .expect("failed to encode request message");
             fsm.handle_message(&request_payload, 0);
+            let mut renew_msg = new_test_repr(
+                DhcpMessageType::Request,
+                4321,
+                EthernetAddress([1, 2, 3, 4, 5, 6]),
+            );
+            renew_msg.client_ip = CLIENT_IP;
+            let mut renew_payload = [0u8; 576];
+            let mut renew_packet = DhcpPacket::new_unchecked(&mut renew_payload);
+            renew_msg
+                .emit(&mut renew_packet)
+                .expect("failed to encode renew message");
             if let DhcpAction::SendPacket {
                 payload, remote, ..
-            } = fsm.handle_message(&request_payload, (LEASE_DURATION / 2) as u64)
+            } = fsm.handle_message(&renew_payload, (LEASE_DURATION / 2) as u64)
             {
                 let packet = DhcpPacket::new_checked(&payload).expect("failed to decode result");
                 let repr = DhcpRepr::parse(&packet).expect("could not convert packet to repr");
                 assert_eq!(repr.message_type, DhcpMessageType::Ack);
                 assert_eq!(remote, CLIENT_IP);
+            } else {
+                panic!("expected sendPacket got Ignore");
+            }
+        }
+
+        #[test]
+        fn test_retransmitted_request_without_client_ip_should_broadcast_ack() {
+            let mut fsm = SimpleDhcpServer::new();
+            let discover_msg = new_test_repr(
+                DhcpMessageType::Discover,
+                1234,
+                EthernetAddress([1, 2, 3, 4, 5, 6]),
+            );
+            let mut discover_payload = [0u8; 576];
+            let mut discover_packet = DhcpPacket::new_unchecked(&mut discover_payload);
+            discover_msg
+                .emit(&mut discover_packet)
+                .expect("failed to encode discover message");
+            fsm.handle_message(&discover_payload, 0);
+            let request_msg = new_test_repr(
+                DhcpMessageType::Request,
+                1234,
+                EthernetAddress([1, 2, 3, 4, 5, 6]),
+            );
+            let mut request_payload = [0u8; 576];
+            let mut request_packet = DhcpPacket::new_unchecked(&mut request_payload);
+            request_msg
+                .emit(&mut request_packet)
+                .expect("failed to encode request message");
+            fsm.handle_message(&request_payload, 0);
+            if let DhcpAction::SendPacket {
+                payload, remote, ..
+            } = fsm.handle_message(&request_payload, 1)
+            {
+                let packet = DhcpPacket::new_checked(&payload).expect("failed to decode result");
+                let repr = DhcpRepr::parse(&packet).expect("could not convert packet to repr");
+                assert_eq!(repr.message_type, DhcpMessageType::Ack);
+                assert_eq!(remote, Ipv4Addr::BROADCAST);
             } else {
                 panic!("expected sendPacket got Ignore");
             }

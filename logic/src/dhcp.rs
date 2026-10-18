@@ -27,7 +27,7 @@ pub mod simple {
     #[derive(Debug)]
     enum SimpleDhcpState {
         Idle,
-        Offered { transaction_id: u32, timestamp: u64 },
+        Offered { mac: [u8; 6], timestamp: u64 },
         Bound { mac: [u8; 6], timestamp: u64 },
     }
 
@@ -51,26 +51,14 @@ pub mod simple {
                     self.state = state;
                     action
                 }
-                (
-                    SimpleDhcpState::Offered {
-                        transaction_id,
-                        timestamp,
-                    },
-                    DhcpMessageType::Discover,
-                ) => {
+                (SimpleDhcpState::Offered { mac, timestamp }, DhcpMessageType::Discover) => {
                     let (action, state) =
-                        handle_rediscover_from_offered(&repr, *transaction_id, time, *timestamp);
+                        handle_rediscover_from_offered(&repr, *mac, time, *timestamp);
                     self.state = state;
                     action
                 }
-                (
-                    SimpleDhcpState::Offered {
-                        transaction_id,
-                        timestamp,
-                    },
-                    DhcpMessageType::Request,
-                ) => {
-                    let (action, state) = handle_request(&repr, *transaction_id, time, *timestamp);
+                (SimpleDhcpState::Offered { mac, timestamp }, DhcpMessageType::Request) => {
+                    let (action, state) = handle_request(&repr, *mac, time, *timestamp);
                     self.state = state;
                     action
                 }
@@ -148,7 +136,7 @@ pub mod simple {
         };
 
         let new_state = SimpleDhcpState::Offered {
-            transaction_id: discover_message.transaction_id,
+            mac: discover_message.client_hardware_address.0,
             timestamp: time,
         };
         info!("received discover. sending offer");
@@ -157,15 +145,15 @@ pub mod simple {
 
     fn handle_request(
         request_message: &DhcpRepr,
-        transaction_id: u32,
+        mac: [u8; 6],
         time: u64,
         previous_time: u64,
     ) -> (DhcpAction, SimpleDhcpState) {
-        if request_message.transaction_id != transaction_id {
+        if request_message.client_hardware_address.as_bytes() != mac {
             return (
                 DhcpAction::Ignore,
                 SimpleDhcpState::Offered {
-                    transaction_id: transaction_id,
+                    mac: mac,
                     timestamp: previous_time,
                 },
             );
@@ -182,11 +170,8 @@ pub mod simple {
             len: ack.buffer_len(),
             remote: Ipv4Addr::BROADCAST,
         };
-        let client_mac = request_message.client_hardware_address.as_bytes();
-        let mut mac_array = [0u8; 6];
-        mac_array.copy_from_slice(&client_mac[..6]);
         let new_state = SimpleDhcpState::Bound {
-            mac: mac_array,
+            mac: mac,
             timestamp: time,
         };
         info!("received request. sending ack: {:?}", ack);
@@ -258,14 +243,14 @@ pub mod simple {
 
     fn handle_rediscover_from_offered(
         discover_message: &DhcpRepr,
-        transaction_id: u32,
+        mac: [u8; 6],
         time: u64,
         previous_time: u64,
     ) -> (DhcpAction, SimpleDhcpState) {
         if time < previous_time + (LEASE_DURATION as u64) {
             info!("ip is already leased");
             let new_state = SimpleDhcpState::Offered {
-                transaction_id: transaction_id,
+                mac: mac,
                 timestamp: previous_time,
             };
             return (DhcpAction::Ignore, new_state);
@@ -284,7 +269,7 @@ pub mod simple {
         };
 
         let new_state = SimpleDhcpState::Offered {
-            transaction_id: discover_message.transaction_id,
+            mac: discover_message.client_hardware_address.0,
             timestamp: time,
         };
         info!("ip lease duration has expired. leasing to new device");
@@ -319,7 +304,7 @@ pub mod simple {
         };
 
         let new_state = SimpleDhcpState::Offered {
-            transaction_id: discover_message.transaction_id,
+            mac: discover_message.client_hardware_address.0,
             timestamp: time,
         };
         info!("ip lease duration has expired. leasing to new device");
@@ -387,7 +372,7 @@ pub mod simple {
         }
 
         #[test]
-        fn test_request_with_correct_xid_should_bind() {
+        fn test_request_from_correct_address_should_bind() {
             let mut fsm = SimpleDhcpServer::new();
             let discover_msg = new_test_repr(
                 DhcpMessageType::Discover,
@@ -424,7 +409,7 @@ pub mod simple {
         }
 
         #[test]
-        fn test_request_with_wrong_xid_should_ignore() {
+        fn test_request_from_wrong_address_should_ignore() {
             let mut fsm = SimpleDhcpServer::new();
             let discover_msg = new_test_repr(
                 DhcpMessageType::Discover,
@@ -439,8 +424,8 @@ pub mod simple {
             fsm.handle_message(&discover_payload, 0);
             let request_msg = new_test_repr(
                 DhcpMessageType::Request,
-                4321,
-                EthernetAddress([1, 2, 3, 4, 5, 6]),
+                1234,
+                EthernetAddress([6, 5, 4, 3, 2, 1]),
             );
             let mut request_payload = [0u8; 576];
             let mut request_packet = DhcpPacket::new_unchecked(&mut request_payload);

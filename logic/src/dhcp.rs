@@ -24,7 +24,7 @@ pub mod simple {
 
     use super::*;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy)]
     enum SimpleDhcpState {
         Idle,
         Offered { mac: [u8; 6], timestamp: u64 },
@@ -51,20 +51,18 @@ pub mod simple {
                     self.state = state;
                     action
                 }
-                (SimpleDhcpState::Offered { mac, timestamp }, DhcpMessageType::Discover) => {
+                (
+                    SimpleDhcpState::Offered { mac, timestamp }
+                    | SimpleDhcpState::Bound { mac, timestamp },
+                    DhcpMessageType::Discover,
+                ) => {
                     let (action, state) =
-                        handle_rediscover_from_offered(&repr, *mac, time, *timestamp);
+                        handle_rediscover(&repr, self.state, *mac, time, *timestamp);
                     self.state = state;
                     action
                 }
                 (SimpleDhcpState::Offered { mac, timestamp }, DhcpMessageType::Request) => {
                     let (action, state) = handle_request(&repr, *mac, time, *timestamp);
-                    self.state = state;
-                    action
-                }
-                (SimpleDhcpState::Bound { mac, timestamp }, DhcpMessageType::Discover) => {
-                    let (action, state) =
-                        handle_rediscover_from_bound(&repr, *mac, time, *timestamp);
                     self.state = state;
                     action
                 }
@@ -241,8 +239,9 @@ pub mod simple {
         (action, new_state)
     }
 
-    fn handle_rediscover_from_offered(
+    fn handle_rediscover(
         discover_message: &DhcpRepr,
+        current: SimpleDhcpState,
         mac: [u8; 6],
         time: u64,
         previous_time: u64,
@@ -250,51 +249,7 @@ pub mod simple {
         let same_client = discover_message.client_hardware_address.as_bytes() == mac;
         if !same_client && time < previous_time + (LEASE_DURATION as u64) {
             info!("ip is already leased");
-            let new_state = SimpleDhcpState::Offered {
-                mac: mac,
-                timestamp: previous_time,
-            };
-            return (DhcpAction::Ignore, new_state);
-        }
-        let offer = new_repr(DhcpMessageType::Offer, discover_message.clone());
-        let mut payload = [0u8; 576];
-        let mut packet = DhcpPacket::new_unchecked(&mut payload);
-        match offer.emit(&mut packet) {
-            Ok(_) => (),
-            Err(_) => return (DhcpAction::Ignore, SimpleDhcpState::Idle),
-        };
-        let action = DhcpAction::SendPacket {
-            payload: payload,
-            len: offer.buffer_len(),
-            remote: Ipv4Addr::BROADCAST,
-        };
-
-        let new_state = SimpleDhcpState::Offered {
-            mac: discover_message.client_hardware_address.0,
-            timestamp: time,
-        };
-        if same_client {
-            info!("received rediscover from same client. sending offer again");
-        } else {
-            info!("ip lease duration has expired. leasing to new device");
-        }
-        (action, new_state)
-    }
-
-    fn handle_rediscover_from_bound(
-        discover_message: &DhcpRepr,
-        mac: [u8; 6],
-        time: u64,
-        previous_time: u64,
-    ) -> (DhcpAction, SimpleDhcpState) {
-        let same_client = discover_message.client_hardware_address.as_bytes() == mac;
-        if !same_client && time < previous_time + (LEASE_DURATION as u64) {
-            info!("ip is already leased");
-            let new_state = SimpleDhcpState::Bound {
-                mac: mac,
-                timestamp: previous_time,
-            };
-            return (DhcpAction::Ignore, new_state);
+            return (DhcpAction::Ignore, current);
         }
         let offer = new_repr(DhcpMessageType::Offer, discover_message.clone());
         let mut payload = [0u8; 576];

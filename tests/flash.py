@@ -1,8 +1,14 @@
+import subprocess
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def main() -> int:
-    return 1
+    return subprocess.run(
+        [ROOT / "cresco.sh", "flash", "app_embedded"], cwd=ROOT
+    ).returncode
 
 
 if __name__ == "__main__":

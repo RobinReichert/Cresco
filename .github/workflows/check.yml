@@ -233,3 +233,15 @@ jobs:
         env:
           CARGO_TERM_COLOR: always
           CARGO_TARGET_DIR: build/app_embedded
+
+  test-hw:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cross_changed == 'true'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Flash
+        run: uv run python tests/flash.py

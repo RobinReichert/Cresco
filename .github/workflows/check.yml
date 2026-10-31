@@ -227,9 +227,34 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Run cargo check
-        working-directory: ./cross
-        run: cargo check --release
+      - name: Build app_embedded
+        run: ./cresco.sh build app_embedded
         env:
           CARGO_TERM_COLOR: always
-          CARGO_TARGET_DIR: build/app_embedded
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/app_embedded/partitions.csv
+            build/app_embedded/riscv32imc-unknown-none-elf/release/cross
+          if-no-files-found: error
+
+  test-hw:
+    needs:
+      - detect-changes
+      - check-rust
+    if: needs.detect-changes.outputs.cross_changed == 'true'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Download firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build/app_embedded
+      - name: Flash
+        run: uv run python tests/flash.py

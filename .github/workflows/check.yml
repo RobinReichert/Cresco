@@ -38,7 +38,7 @@ jobs:
       - id: clang_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.c' '.*\.h' '.github/'
       - id: rust_check
-        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/' 'rust-toolchain.toml'
       - id: camera_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'camera/' '.github/'
       - id: cross_check

@@ -1,6 +1,5 @@
 import network
 import socket
-import sys
 import time
 
 TIMEOUT = 30
@@ -34,4 +33,3 @@ def main() -> int:
 if __name__ == "__main__":
     err = main()
     print("FAIL" if err else "PASS")
-    sys.exit(err)

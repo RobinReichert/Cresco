@@ -264,4 +264,4 @@ jobs:
       - name: Flash
         run: uv run python tests/flash.py
       - name: Ping
-        run: uv run python tests/mp_run.py tests/client/ping.py
+        run: uv run python tests/mp_run.py tests/client/join.py

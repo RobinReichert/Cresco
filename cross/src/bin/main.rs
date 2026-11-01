@@ -28,12 +28,9 @@ use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex, signal::Signal,
 };
 use embassy_time::{Duration, Timer};
+use esp_hal::clock::CpuClock;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
-use esp_hal::{
-    clock::CpuClock,
-    gpio::{Level, Output, OutputConfig},
-};
 use esp_storage::FlashStorage;
 use heapless::Vec;
 use logic::wifi::LoginData;
@@ -123,11 +120,13 @@ async fn main(spawner: Spawner) -> ! {
         spawner.must_spawn(web::web_task(task_id, ap_stack, captive_app));
     }
 
-    let ain1 = Output::new(peripherals.GPIO9, Level::Low, OutputConfig::default());
-    let ain2 = Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default());
-    let bin1 = Output::new(peripherals.GPIO20, Level::Low, OutputConfig::default());
-    let bin2 = Output::new(peripherals.GPIO21, Level::Low, OutputConfig::default());
-    let mut stepper = Drv8833::new(ain1, ain2, bin1, bin2, 200);
+    let mut stepper = Drv8833::new(
+        peripherals.GPIO9,
+        peripherals.GPIO10,
+        peripherals.GPIO20,
+        peripherals.GPIO21,
+        200,
+    );
     let _ = stepper.release().await;
 
     let mut adc_builder = AdcBuilder::new();

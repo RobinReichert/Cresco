@@ -1,0 +1,33 @@
+import network
+import socket
+import time
+
+TIMEOUT = 30
+
+
+def main() -> int:
+    wlan = network.WLAN()
+    wlan.active(True)
+    wlan.connect("Cresco")
+    start = time.time()
+    while not wlan.isconnected():
+        if start < time.time() - TIMEOUT:
+            print("timeout while connecting to wifi")
+            return 1
+        time.sleep(1)
+    print("successfully connected to wifi")
+    s = socket.socket()
+    s.settimeout(10)
+    try:
+        s.connect(("192.168.1.1", 80))
+        print("successfully connected to socket")
+        return 0
+    except OSError:
+        return 1
+    finally:
+        s.close()
+
+
+if __name__ == "__main__":
+    err = main()
+    print("FAIL" if err else "PASS")

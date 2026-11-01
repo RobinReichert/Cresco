@@ -9,4 +9,9 @@ dev = [
     "ruff>=0.15.14",
     "pyyaml>=6.0.3",
     "mpremote>=1.29.0",
+    "micropython-esp32-stubs>=1.29.0.post1",
 ]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

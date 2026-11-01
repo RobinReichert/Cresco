@@ -18,6 +18,7 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
+    { name = "micropython-esp32-stubs" },
     { name = "mpremote" },
     { name = "pre-commit" },
     { name = "pyyaml" },
@@ -28,6 +29,7 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "micropython-esp32-stubs", specifier = ">=1.29.0.post1" },
     { name = "mpremote", specifier = ">=1.29.0" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -59,6 +61,26 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/52/63/51723b5f116cc04b061cb6f5a561790abf249d25931d515cd375e063e0f4/identify-2.6.19.tar.gz", hash = "sha256:6be5020c38fcb07da56c53733538a3081ea5aa70d36a156f83044bfbf9173842", size = 99567, upload-time = "2026-04-17T18:39:50.265Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/84/d9273cd09688070a6523c4aee4663a8538721b2b755c4962aafae0011e72/identify-2.6.19-py2.py3-none-any.whl", hash = "sha256:20e6a87f786f768c092a721ad107fc9df0eb89347be9396cadf3f4abbd1fb78a", size = 99397, upload-time = "2026-04-17T18:39:49.221Z" },
+]
+
+[[package]]
+name = "micropython-esp32-stubs"
+version = "1.29.0.post1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "micropython-stdlib-stubs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6a/a3/81f0baef74756712543ddcac1c593e5a114f5efdc43ea3579bbb3a58f4f9/micropython_esp32_stubs-1.29.0.post1.tar.gz", hash = "sha256:bd458e03eaa5c9b5986f08f63ccbd6254e6d72289dbf2a9896cdb7b1df6978fc", size = 105710, upload-time = "2026-08-30T14:50:42.843Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ed/8c/b8193d108bbfd6208f7797b2765510578c223887526d2baa50a5feaa3564/micropython_esp32_stubs-1.29.0.post1-py2.py3-none-any.whl", hash = "sha256:c0a72410b9924f51b520534de0dc7f1839ff8f108689aa1e935a0c2b9fcbd96b", size = 134423, upload-time = "2026-08-30T14:50:41.579Z" },
+]
+
+[[package]]
+name = "micropython-stdlib-stubs"
+version = "1.29.0.post2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/e6/3edc7601ecbfb1deaee29e7e8beadb7e2d4877b5ed4f71f0c6644bb7493d/micropython_stdlib_stubs-1.29.0.post2-py3-none-any.whl", hash = "sha256:bdcd54d9896d8e1d455b3a99995d82a8399e1e2c9cb94eacabe278e5c2397783", size = 154274, upload-time = "2026-08-31T11:34:33.329Z" },
 ]
 
 [[package]]

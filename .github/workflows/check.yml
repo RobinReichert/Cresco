@@ -258,5 +258,7 @@ jobs:
         with:
           name: firmware
           path: build/app_embedded
+      - name: Reset
+        run: probe-rs erase --chip esp32c3
       - name: Flash
         run: uv run python tests/flash.py

@@ -8,4 +8,5 @@ dev = [
     "pre-commit>=4.6.0",
     "ruff>=0.15.14",
     "pyyaml>=6.0.3",
+    "mpremote>=1.29.0",
 ]

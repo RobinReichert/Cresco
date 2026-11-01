@@ -34,7 +34,8 @@ def main() -> int:
         status = int(s.recv(64).split(b" ")[1])
         print("login status", status)
         return 0 if status == 200 else 1
-    except OSError:
+    except OSError as e:
+        print(e)
         return 1
     finally:
         s.close()

@@ -60,19 +60,21 @@ exclusively borrowed, so no caller can ever observe it.
 
 The DRV8833 is a **dual H-bridge**, not a dedicated stepper controller. It
 exposes four logic inputs — `AIN1`, `AIN2`, `BIN1`, `BIN2` — and the driver
-generates the phase sequence in firmware. It is constructed from four
-configured output pins plus the motor's resolution:
+generates the phase sequence in firmware. It is constructed from four GPIO
+pins plus the motor's resolution:
 
 ```rust
-let motor = Drv8833::new(ain1, ain2, bin1, bin2, /* resolution */ 200);
+let motor = Drv8833::new(
+    peripherals.GPIO0,
+    peripherals.GPIO1,
+    peripherals.GPIO2,
+    peripherals.GPIO3,
+    /* resolution */ 200,
+);
 ```
 
-Each pin is an `esp_hal::gpio::Output` configured push-pull and started `Low`,
-so the motor boots de-energised:
-
-```rust
-let pin = Output::new(peripherals.GPIO0, Level::Low, OutputConfig::default());
-```
+`new` configures each pin as an `esp_hal::gpio::Output`, push-pull and started
+`Low`, so the motor boots de-energised.
 
 ### Wiring
 

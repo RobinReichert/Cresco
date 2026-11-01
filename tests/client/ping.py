@@ -6,13 +6,14 @@ TIMEOUT = 30
 
 
 def main() -> int:
-    wlan = network.WLAN()
+    wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     wlan.connect("Cresco")
     start = time.time()
     while not wlan.isconnected():
         if start < time.time() - TIMEOUT:
             print("timeout while connecting to wifi")
+            wlan.active(False)
             return 1
         time.sleep(1)
     print("successfully connected to wifi")
@@ -26,6 +27,7 @@ def main() -> int:
         return 1
     finally:
         s.close()
+        wlan.active(False)
 
 
 if __name__ == "__main__":

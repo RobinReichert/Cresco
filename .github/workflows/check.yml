@@ -264,6 +264,4 @@ jobs:
       - name: Flash
         run: uv run python tests/flash.py
       - name: Ping
-        run: |
-          uv run mpremote connect "$MP_PORT" run tests/client/ping.py | tee ping_out.txt
-          grep -q '^PASS$' ping_out.txt
+        run: uv run mpremote connect "$MP_PORT" run tests/client/ping.py

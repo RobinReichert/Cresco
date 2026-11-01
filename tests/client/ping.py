@@ -33,3 +33,5 @@ def main() -> int:
 if __name__ == "__main__":
     err = main()
     print("FAIL" if err else "PASS")
+    if err:
+        raise SystemExit(1)

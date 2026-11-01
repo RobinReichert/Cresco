@@ -1,6 +1,5 @@
 use embassy_net::{Stack, udp::PacketMetadata, udp::UdpSocket};
 use embassy_time::Instant;
-use esp_println as _;
 use logic::dhcp::{DhcpAction, DhcpServer, simple::SimpleDhcpServer};
 
 #[embassy_executor::task]

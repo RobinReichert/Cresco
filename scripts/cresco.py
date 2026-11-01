@@ -112,11 +112,21 @@ def main():
             if args.target == "app_embedded":
                 run(
                     [
-                        "espflash",
-                        "flash",
-                        "--partition-table",
+                        "probe-rs",
+                        "download",
+                        "--chip",
+                        "esp32c3",
+                        "--idf-partition-table",
                         ROOT.joinpath(PARTITIONS_PATH),
                         ROOT.joinpath(APP_EMBEDDED_ELF_PATH),
+                    ]
+                )
+                run(
+                    [
+                        "probe-rs",
+                        "reset",
+                        "--chip",
+                        "esp32c3",
                     ]
                 )
 
@@ -127,13 +137,10 @@ def main():
             if args.target == "app_embedded":
                 run(
                     [
-                        "espflash",
-                        "monitor",
+                        "probe-rs",
+                        "attach",
                         "--chip",
                         "esp32c3",
-                        "--log-format",
-                        "defmt",
-                        "--elf",
                         ROOT.joinpath(APP_EMBEDDED_ELF_PATH),
                     ]
                 )

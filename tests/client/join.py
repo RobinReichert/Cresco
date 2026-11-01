@@ -31,9 +31,13 @@ def main() -> int:
             "Content-Length: %d\r\n\r\n%s" % (len(body), body)
         )
         s.send(request.encode())
-        status = int(s.recv(64).split(b" ")[1])
-        print("login status", status)
-        return 0 if status == 200 else 1
+        for _ in range(10):
+            if not wlan.isconnected():
+                print("login accepted, device left the portal")
+                return 0
+            time.sleep(1)
+        print("device is still serving the portal")
+        return 1
     except OSError as e:
         print(e)
         return 1

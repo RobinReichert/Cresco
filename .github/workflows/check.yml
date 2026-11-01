@@ -262,4 +262,4 @@ jobs:
       - name: Reset
         run: probe-rs erase --chip esp32c3
       - name: Ping
-        run: uv run mpremote connect "$MP_PORT" run tests/client/ping.py; echo "exit=$?"
+        run: uv run python tests/mp_run.py tests/client/ping.py

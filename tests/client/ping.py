@@ -1,7 +1,7 @@
 import network
 import socket
-import time
 import sys
+import time
 
 TIMEOUT = 30
 

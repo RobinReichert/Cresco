@@ -261,6 +261,8 @@ jobs:
           path: build/app_embedded
       - name: Reset
         run: probe-rs erase --chip esp32c3
+      - name: Flash
+        run: uv run python tests/flash.py
       - name: Ping
         run: |
           uv run mpremote connect "$MP_PORT" run tests/client/ping.py | tee ping_out.txt

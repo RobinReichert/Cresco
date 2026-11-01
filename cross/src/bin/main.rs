@@ -21,6 +21,7 @@ use cross::{
     wifi::{self, connection},
 };
 use defmt::info;
+use defmt_rtt as _;
 use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
 use embassy_sync::{
@@ -33,7 +34,6 @@ use esp_hal::{
     clock::CpuClock,
     gpio::{Level, Output, OutputConfig},
 };
-use esp_println as _;
 use esp_storage::FlashStorage;
 use heapless::Vec;
 use logic::wifi::LoginData;
@@ -57,6 +57,11 @@ esp_bootloader_esp_idf::esp_app_desc!();
 async fn main(spawner: Spawner) -> ! {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
+
+    // keep the CPU clock on during `wfi`, otherwise probe-rs can't read RTT logs
+    esp_hal::peripherals::SYSTEM::regs()
+        .cpu_per_conf()
+        .modify(|_, w| w.cpu_wait_mode_force_on().set_bit());
 
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 66320);
 

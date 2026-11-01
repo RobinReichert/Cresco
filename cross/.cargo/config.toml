@@ -1,5 +1,5 @@
 [target.riscv32imc-unknown-none-elf]
-runner = "espflash flash --monitor --chip esp32c3 --log-format defmt"
+runner = "probe-rs run --chip esp32c3 --idf-partition-table ../partitions.csv"
 
 [env]
 DEFMT_LOG="info,picoserve=error"

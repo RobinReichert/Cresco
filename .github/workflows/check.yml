@@ -42,7 +42,7 @@ jobs:
       - id: camera_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'camera/' '.github/'
       - id: cross_check
-        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/' 'rust-toolchain.toml'
       - id: python_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
       - id: frontend_check

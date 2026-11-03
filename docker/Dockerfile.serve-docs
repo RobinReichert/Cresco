@@ -1,7 +1,7 @@
-FROM node:20-alpine
+FROM node:20.20.2-alpine3.23
 
 RUN apk add --no-cache ruby ruby-dev build-base curl
-RUN gem install bundler
+RUN gem install bundler -v 4.0.12
 WORKDIR /app
 COPY docs/config/Gemfile docs/config/_config.yml ./docs/config/
 RUN bundle install --gemfile=docs/config/Gemfile

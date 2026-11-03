@@ -9,3 +9,6 @@ dev = [
     "ruff>=0.15.14",
     "pyyaml>=6.0.3",
 ]
+
+[tool.uv]
+required-version = "==0.9.21"

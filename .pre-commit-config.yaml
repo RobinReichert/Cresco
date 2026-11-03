@@ -10,7 +10,7 @@ repos:
   - id: markdownlint
     name: markdownlint
     language: node
-    additional_dependencies: [markdownlint-cli]
+    additional_dependencies: [markdownlint-cli@0.50.0]
     entry: markdownlint --config docs/config/.markdownlint.yml
     files: ^docs/.*\.md$
   - id: ruff-format

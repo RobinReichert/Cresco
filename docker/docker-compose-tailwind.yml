@@ -1,8 +1,8 @@
 services:
   tailwind:
     build:
-      context: .
-      dockerfile: Dockerfile.tailwind
+      context: ../web
+      dockerfile: ../docker/Dockerfile.tailwind
     volumes:
       - ../web/styles:/app/styles
       - ../web/pages:/app/pages

@@ -89,6 +89,7 @@ def main():
                     "-f",
                     "docker/docker-compose-tailwind.yml",
                     "run",
+                    "--build",
                     "--rm",
                     "tailwind",
                 ]
@@ -96,7 +97,16 @@ def main():
 
         case "setup":
             run(["uv", "run", "pre-commit", "install"])
-            run(["docker", "pull", "rlespinasse/drawio-export"])
+            run(
+                [
+                    "docker",
+                    "compose",
+                    "-f",
+                    "docker/docker-compose-docs-server.yml",
+                    "pull",
+                    "drawio-export",
+                ]
+            )
 
         case "build":
             if args.target == "app_embedded":

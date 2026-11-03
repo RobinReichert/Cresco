@@ -6,7 +6,7 @@ services:
     working_dir: /app/drawio
     volumes:
       - ../docs:/app
-    command: --output /app/assets/drawio --format svg --remove-page-suffix --on-changes
+    command: --output /app/assets/drawio --format svg --remove-page-suffix
 
   docs-server:
     container_name: docs-server

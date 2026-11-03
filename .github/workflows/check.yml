@@ -200,7 +200,7 @@ jobs:
       - name: Test logic
         run: cargo test -p logic
 
-  check-rust:
+  check-app-embedded:
     needs: detect-changes
     if: needs.detect-changes.outputs.cross_changed == 'true'
     runs-on: ubuntu-24.04
@@ -240,11 +240,12 @@ jobs:
   test-hw:
     needs:
       - detect-changes
-      - check-rust
+      - check-app-embedded
     if: needs.detect-changes.outputs.cross_changed == 'true'
     runs-on: self-hosted
     env:
       PROBE_RS_PROBE: ${{ vars.PROBE_RS_PROBE }}
+      MP_PORT: ${{ vars.MP_PORT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -255,5 +256,9 @@ jobs:
         with:
           name: firmware
           path: build/app_embedded
+      - name: Reset
+        run: probe-rs erase --chip esp32c3
       - name: Flash
         run: uv run python tests/flash.py
+      - name: Join
+        run: uv run python tests/mp_run.py tests/client/join.py

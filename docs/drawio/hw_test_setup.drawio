@@ -1,0 +1,28 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="hw-test-setup">
+    <mxGraphModel dx="1047" dy="587" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="runner" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Runner" vertex="1">
+          <mxGeometry height="80" width="140" x="40" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="dut" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Device under test&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Cresco firmware, serves the &quot;Cresco&quot; AP&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="240" x="380" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="client" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Test client&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;MicroPython&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="240" x="380" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="runner-dut" edge="1" parent="1" source="runner" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=default;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="dut" value="probe-rs&lt;br&gt;(USB-JTAG)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="runner-client" edge="1" parent="1" source="runner" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=default;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="client" value="mpremote&lt;br&gt;(USB serial)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="client-dut" edge="1" parent="1" source="client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;labelBackgroundColor=default;" target="dut" value="joins the AP over Wi-Fi,&lt;br&gt;sends requests">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

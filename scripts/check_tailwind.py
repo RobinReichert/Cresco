@@ -22,6 +22,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
             "-f",
             COMPOSE_FILE,
             "run",
+            "--build",
             "--rm",
             "-v",
             f"{tmpdir}:/app/styles",

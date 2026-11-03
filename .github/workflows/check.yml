@@ -240,7 +240,7 @@ jobs:
   test-hw:
     needs:
       - detect-changes
-      - check-rust
+      - check-app-embedded
     if: needs.detect-changes.outputs.cross_changed == 'true'
     runs-on: self-hosted
     env:

@@ -2,7 +2,7 @@
 services:
   drawio-export:
     container_name: drawio-export
-    image: rlespinasse/drawio-export:latest
+    image: rlespinasse/drawio-export:v4.52.0
     working_dir: /app/drawio
     volumes:
       - ../docs:/app

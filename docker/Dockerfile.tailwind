@@ -1,4 +1,5 @@
-FROM node:alpine
+FROM node:24.22.2-alpine3.24
 
 WORKDIR /app
-RUN npm install tailwindcss @tailwindcss/cli
+COPY package.json package-lock.json ./
+RUN npm ci

@@ -15,3 +15,6 @@ dev = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+
+[tool.uv]
+required-version = "==0.9.21"

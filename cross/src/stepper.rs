@@ -22,7 +22,7 @@ pub trait Stepper {
 pub mod drv8833 {
 
     use super::*;
-    use esp_hal::gpio::{Level, Output};
+    use esp_hal::gpio::{Level, Output, OutputConfig, OutputPin};
 
     #[derive(Clone, Copy, defmt::Format)]
     #[repr(u8)]
@@ -62,13 +62,19 @@ pub mod drv8833 {
 
     impl<'a> Drv8833<'a> {
         pub fn new(
-            ain1: Output<'a>,
-            ain2: Output<'a>,
-            bin1: Output<'a>,
-            bin2: Output<'a>,
+            ain1: impl OutputPin + 'a,
+            ain2: impl OutputPin + 'a,
+            bin1: impl OutputPin + 'a,
+            bin2: impl OutputPin + 'a,
             resolution: usize,
         ) -> Self {
-            let pins = [ain1, ain2, bin1, bin2];
+            let config = OutputConfig::default();
+            let pins = [
+                Output::new(ain1, Level::Low, config),
+                Output::new(ain2, Level::Low, config),
+                Output::new(bin1, Level::Low, config),
+                Output::new(bin2, Level::Low, config),
+            ];
             Self {
                 pins,
                 state: StepperState::Idle,

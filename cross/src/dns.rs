@@ -2,7 +2,6 @@ use core::net::Ipv4Addr;
 use defmt::{info, warn};
 use embassy_futures::select::{Either, select};
 use embassy_net::{IpAddress, IpEndpoint, Stack, udp::PacketMetadata, udp::UdpSocket};
-use esp_println as _;
 use logic::dns::{DnsAction, DnsServer, mdns::MdnsServer, poison::PoisonedDnsServer};
 
 #[embassy_executor::task]

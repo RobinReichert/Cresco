@@ -15,7 +15,7 @@ permissions:
 jobs:
 
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       docs_changed: ${{ steps.docs_check.outputs.changed }}
       clang_changed: ${{ steps.clang_check.outputs.changed }}
@@ -38,18 +38,18 @@ jobs:
       - id: clang_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.c' '.*\.h' '.github/'
       - id: rust_check
-        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.rs' '.github/' 'rust-toolchain.toml'
       - id: camera_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'camera/' '.github/'
       - id: cross_check
-        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/' 'rust-toolchain.toml'
       - id: python_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
       - id: frontend_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'web/' '.github/'
 
   hygiene:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
         run: uv run pre-commit run mixed-line-ending --all-files
 
   check-yaml:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
   lint-docs:
     needs: detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
     needs:
       - detect-changes
     if: needs.detect-changes.outputs.docs_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,7 +121,7 @@ jobs:
   fmt-python:
     needs: detect-changes
     if: needs.detect-changes.outputs.python_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -132,7 +132,7 @@ jobs:
   lint-python:
     needs: detect-changes
     if: needs.detect-changes.outputs.python_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -143,7 +143,7 @@ jobs:
   check-tailwind:
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -155,7 +155,7 @@ jobs:
   fmt-clang:
     needs: detect-changes
     if: needs.detect-changes.outputs.clang_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -166,7 +166,7 @@ jobs:
   build-camera:
     needs: detect-changes
     if: needs.detect-changes.outputs.camera_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
   fmt-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.rust_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -191,30 +191,27 @@ jobs:
   test-rust:
     needs: detect-changes
     if: needs.detect-changes.outputs.cross_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install nightly
-        run: |
-          rustup toolchain install nightly
-          rustup default nightly
+      - name: Install toolchain
+        run: rustup toolchain install
       - name: Test logic
         run: cargo test -p logic
 
-  check-rust:
+  check-app-embedded:
     needs: detect-changes
     if: needs.detect-changes.outputs.cross_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
-      - name: Install nightly and target
+      - name: Install toolchain and target
         run: |
-          rustup toolchain install nightly
-          rustup default nightly
+          rustup toolchain install
           rustup target add riscv32imc-unknown-none-elf
           rustup component add rust-src
       - name: Cache cargo registry
@@ -227,9 +224,41 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Run cargo check
-        working-directory: ./cross
-        run: cargo check --release
+      - name: Build app_embedded
+        run: ./cresco.sh build app_embedded
         env:
           CARGO_TERM_COLOR: always
-          CARGO_TARGET_DIR: build/app_embedded
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/app_embedded/partitions.csv
+            build/app_embedded/riscv32imc-unknown-none-elf/release/cross
+          if-no-files-found: error
+
+  test-hw:
+    needs:
+      - detect-changes
+      - check-app-embedded
+    if: needs.detect-changes.outputs.cross_changed == 'true'
+    runs-on: self-hosted
+    env:
+      PROBE_RS_PROBE: ${{ vars.PROBE_RS_PROBE }}
+      MP_PORT: ${{ vars.MP_PORT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Download firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build/app_embedded
+      - name: Reset
+        run: probe-rs erase --chip esp32c3
+      - name: Flash
+        run: uv run python tests/flash.py
+      - name: Join
+        run: uv run python tests/mp_run.py tests/client/join.py

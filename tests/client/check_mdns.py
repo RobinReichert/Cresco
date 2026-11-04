@@ -1,28 +1,72 @@
 import network
 import socket
 import time
+
 import wifi_credentials
 
+TIMEOUT = 30
+QUERY = (
+    b"\x12\x34"  # id
+    b"\x00\x00"  # flags: standard query
+    b"\x00\x01"  # 1 question
+    b"\x00\x00\x00\x00\x00\x00"  # no answer, authority or extra records
+    b"\x06cresco\x05local\x00"  # name as length-prefixed labels, 0 ends it
+    b"\x00\x01"  # type A
+    b"\x00\x01"  # class IN
+)
 
-def try_bind(label):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+def main() -> int:
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(wifi_credentials.SSID, wifi_credentials.PASSWORD)
+    start = time.time()
+    while not wlan.isconnected():
+        if start < time.time() - TIMEOUT:
+            print("timeout while connecting to wifi")
+            wlan.active(False)
+            return 1
+        time.sleep(1)
+    print("successfully connected to wifi")
+    s = None
     try:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(("0.0.0.0", 5353))
-        print(label, "bind OK")
+        ip, mask, _, _ = wlan.ifconfig()
+        # Sent from a random port, so this is a legacy unicast query (RFC 6762
+        # section 6.7) and the answer comes back to this socket directly.
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(3)
+        s.sendto(QUERY, ("224.0.0.251", 5353))
+        data, _ = s.recvfrom(512)
+        print(data)
+        if data[:2] != QUERY[:2]:
+            print("response id does not match the query")
+            return 1
+        if not data[2] & 0x80:
+            print("not a response")
+            return 1
+        if data[6:8] != b"\x00\x01":
+            print("expected exactly one answer")
+            return 1
+        addr = ".".join(str(b) for b in data[-4:])
+        print("cresco.local ->", addr)
+        in_subnet = all(
+            int(a) & int(m) == int(b) & int(m)
+            for a, b, m in zip(ip.split("."), addr.split("."), mask.split("."))
+        )
+        if not in_subnet:
+            print("answer is not in the local subnet")
+            return 1
+        return 0
     except OSError as e:
-        print(label, "bind failed:", e)
+        print(e)
+        return 1
     finally:
-        s.close()
+        if s:
+            s.close()
+        wlan.disconnect()
+        wlan.active(False)
 
 
-try_bind("fresh, wifi off")
-wlan = network.WLAN(network.STA_IF)
-wlan.active(True)
-try_bind("wifi active")
-wlan.connect(wifi_credentials.SSID, wifi_credentials.PASSWORD)
-while not wlan.isconnected():
-    time.sleep(1)
-try_bind("wifi connected")
-print(network.hostname())
-wlan.active(False)
+if __name__ == "__main__":
+    err = main()
+    print("FAIL" if err else "PASS")

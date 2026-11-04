@@ -262,3 +262,5 @@ jobs:
         run: uv run python tests/flash.py
       - name: Join
         run: uv run python tests/mp_run.py tests/client/join.py
+      - name: Check mdns
+        run: uv run python tests/mp_run.py tests/client/check_mdns.py

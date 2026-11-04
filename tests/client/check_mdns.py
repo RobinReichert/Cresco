@@ -28,6 +28,7 @@ def main() -> int:
             return 1
         time.sleep(1)
     print("successfully connected to wifi")
+    s = None
     try:
         ip = wlan.ifconfig()[0]
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -44,6 +45,8 @@ def main() -> int:
         print(e)
         return 1
     finally:
+        if s:
+            s.close()
         wlan.disconnect()
         wlan.active(False)
 

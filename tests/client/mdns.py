@@ -5,6 +5,7 @@ import time
 import wifi_credentials
 
 TIMEOUT = 30
+ATTEMPTS = 10
 QUERY = (
     b"\x12\x34"  # id
     b"\x00\x00"  # flags: standard query
@@ -34,9 +35,19 @@ def main() -> int:
         # Sent from a random port, so this is a legacy unicast query (RFC 6762
         # section 6.7) and the answer comes back to this socket directly.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(3)
-        s.sendto(QUERY, ("224.0.0.251", 5353))
-        data, _ = s.recvfrom(512)
+        s.settimeout(1)
+        # The device may still be joining the network, so ask again like a
+        # real resolver would.
+        for attempt in range(ATTEMPTS):
+            s.sendto(QUERY, ("224.0.0.251", 5353))
+            try:
+                data, _ = s.recvfrom(512)
+                break
+            except OSError:
+                print("no answer, attempt", attempt + 1)
+        else:
+            print("no answer after", ATTEMPTS, "attempts")
+            return 1
         print(data)
         if data[:2] != QUERY[:2]:
             print("response id does not match the query")

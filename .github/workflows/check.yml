@@ -266,4 +266,4 @@ jobs:
         if: ${{ !cancelled() }}
         run: uv run python tests/mp_run.py tests/client/join.py
       - name: Check mdns
-        run: uv run python tests/mp_run.py tests/client/check_mdns.py
+        run: uv run python tests/mp_run.py tests/client/mdns.py

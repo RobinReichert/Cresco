@@ -5,7 +5,7 @@ import time
 import wifi_credentials
 
 TIMEOUT = 30
-ATTEMPTS = 10
+ATTEMPTS = 30
 QUERY = (
     b"\x12\x34"  # id
     b"\x00\x00"  # flags: standard query
@@ -38,17 +38,34 @@ def main() -> int:
         s.settimeout(1)
         # The device may still be joining the network, so ask again like a
         # real resolver would.
+        data = None
+        resolved = None
+        # Keep going until both the raw query and the resolver have an answer,
+        # or the attempts are used up.
         for attempt in range(ATTEMPTS):
-            s.sendto(QUERY, ("224.0.0.251", 5353))
-            try:
-                data, _ = s.recvfrom(512)
+            if data is None:
+                s.sendto(QUERY, ("224.0.0.251", 5353))
+                try:
+                    data, _ = s.recvfrom(512)
+                    print("raw query answered, attempt", attempt + 1)
+                except OSError:
+                    print("no answer to the raw query, attempt", attempt + 1)
+            if resolved is None:
+                try:
+                    resolved = socket.getaddrinfo("cresco.local", 80)[0][-1][0]
+                    print("getaddrinfo ->", resolved)
+                except OSError as e:
+                    print("getaddrinfo failed:", e)
+            if data is not None and resolved is not None:
                 break
-            except OSError:
-                print("no answer, attempt", attempt + 1)
-        else:
-            print("no answer after", ATTEMPTS, "attempts")
+            time.sleep(1)
+        if data is None:
+            print("no answer to the raw query after", ATTEMPTS, "attempts")
             return 1
         print(data)
+        # Informational only, the result depends on the raw query.
+        if resolved is None:
+            print("getaddrinfo never resolved cresco.local")
         if data[:2] != QUERY[:2]:
             print("response id does not match the query")
             return 1

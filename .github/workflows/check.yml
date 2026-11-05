@@ -42,7 +42,7 @@ jobs:
       - id: camera_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'camera/' '.github/'
       - id: cross_check
-        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/' 'rust-toolchain.toml'
+        run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} 'cross/' 'logic/' '.cargo/' '.github/' 'rust-toolchain.toml' 'tests/'
       - id: python_check
         run: uv run python scripts/check_changes.py ${{ github.event.pull_request.base.ref }} '.*\.py' '.github/'
       - id: frontend_check
@@ -260,5 +260,8 @@ jobs:
         run: probe-rs erase --chip esp32c3
       - name: Flash
         run: uv run python tests/flash.py
+      - name: DNS
+        run: uv run python tests/mp_run.py tests/client/dns.py
       - name: Join
+        if: ${{ !cancelled() }}
         run: uv run python tests/mp_run.py tests/client/join.py

@@ -23,7 +23,6 @@ def main() -> int:
     s = socket.socket()
     s.settimeout(10)
     try:
-        print(socket.getaddrinfo("www.google.com", 80))
         s.connect(("192.168.1.1", 80))
         request = (
             "POST /login HTTP/1.0\r\n"

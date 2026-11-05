@@ -52,7 +52,12 @@ traceback, a crash or no output.
 
 | Script | What it checks |
 | --- | --- |
+| `tests/client/dns.py` | The portal's DNS answers every name with its own IP |
 | `tests/client/join.py` | The portal accepts credentials |
+
+The order matters. `dns.py` needs the portal, which only exists until `join.py`
+has provisioned the device, so it runs first. `join.py` still runs if the DNS
+test fails, because the two do not depend on each other.
 
 ## Setup
 

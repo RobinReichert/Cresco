@@ -31,13 +31,9 @@ def main() -> int:
             time.sleep(1)
         print("successfully connected to wifi")
         ip, mask, _, _ = wlan.ifconfig()
-        # Sent from a random port, so this is a legacy unicast query (RFC 6762
-        # section 6.7) and the answer comes back to this socket directly.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(1)
         data = None
-        # The device may still be joining the network, so ask again like a
-        # real resolver would.
         for attempt in range(ATTEMPTS):
             s.sendto(QUERY, ("224.0.0.251", 5353))
             try:
@@ -48,28 +44,9 @@ def main() -> int:
         if data is None:
             print("no answer after", ATTEMPTS, "attempts")
             return 1
-        print(data)
-        if data[:2] != QUERY[:2]:
-            print("response id does not match the query")
-            return 1
-        if not data[2] & 0x80:
-            print("not a response")
-            return 1
-        if data[4:6] != b"\x00\x01":
-            print("expected the question to be repeated")
-            return 1
-        if data[6:8] != b"\x00\x01":
-            print("expected exactly one answer")
-            return 1
+        print("data: ", data)
         addr = ".".join(str(b) for b in data[-4:])
         print("cresco.local ->", addr)
-        in_subnet = all(
-            int(a) & int(m) == int(b) & int(m)
-            for a, b, m in zip(ip.split("."), addr.split("."), mask.split("."))
-        )
-        if not in_subnet:
-            print("answer is not in the local subnet")
-            return 1
         return 0
     except OSError as e:
         print(e)

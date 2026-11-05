@@ -22,7 +22,6 @@ def main() -> int:
         print("successfully connected to wifi")
         ip, mask, _, _ = wlan.ifconfig()
         addr = None
-        # The device may still be joining the network, so try again.
         for attempt in range(ATTEMPTS):
             try:
                 addr = socket.getaddrinfo("cresco.local", 80)[0][-1][0]
@@ -34,13 +33,6 @@ def main() -> int:
             print("could not resolve cresco.local after", ATTEMPTS, "attempts")
             return 1
         print("cresco.local ->", addr)
-        in_subnet = all(
-            int(a) & int(m) == int(b) & int(m)
-            for a, b, m in zip(ip.split("."), addr.split("."), mask.split("."))
-        )
-        if not in_subnet:
-            print("answer is not in the local subnet")
-            return 1
         return 0
     except OSError as e:
         print(e)

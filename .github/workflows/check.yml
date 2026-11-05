@@ -263,7 +263,15 @@ jobs:
       - name: DNS
         run: uv run python tests/mp_run.py tests/client/dns.py
       - name: Join
+        id: join
         if: ${{ !cancelled() }}
         run: uv run python tests/mp_run.py tests/client/join.py
-      - name: Check mdns
-        run: uv run python tests/mp_run.py tests/client/mdns.py
+      - name: mDNS legacy query
+        if: ${{ !cancelled() && steps.join.outcome == 'success' }}
+        run: uv run python tests/mp_run.py tests/client/mdns_legacy.py
+      - name: mDNS resolver
+        if: ${{ !cancelled() && steps.join.outcome == 'success' }}
+        run: uv run python tests/mp_run.py tests/client/mdns_resolver.py
+      - name: mDNS normal query
+        if: ${{ !cancelled() && steps.join.outcome == 'success' }}
+        run: uv run python tests/mp_run.py tests/client/mdns_normal.py

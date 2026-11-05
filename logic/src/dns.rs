@@ -993,6 +993,66 @@ pub mod mdns {
         }
 
         #[test]
+        fn test_query_from_mdns_port_should_be_answered_to_the_group() {
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket { remote, .. } =
+                server.handle_message(&BROWSER_QUERY, TEST_IP, TEST_REMOTE)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            assert_eq!(remote, (MDNS_GROUP, MDNS_PORT));
+        }
+
+        const LEGACY_REMOTE: (Ipv4Addr, u16) = (Ipv4Addr::new(10, 100, 237, 5), 49152);
+        const LEGACY_ID: u16 = 0x1234;
+
+        fn legacy_response() -> ([u8; MAX_RESPONSE_SIZE], (Ipv4Addr, u16)) {
+            let (mut bytes, len) = query_for(&["cresco", "local"], A_CODE);
+            bytes[..2].copy_from_slice(&LEGACY_ID.to_be_bytes());
+            let mut server = MdnsServer::new();
+            let DnsAction::SendPacket {
+                payload, remote, ..
+            } = server.handle_message(&bytes[..len], TEST_IP, LEGACY_REMOTE)
+            else {
+                panic!("expected a response to cresco.local");
+            };
+            (payload, remote)
+        }
+
+        #[test]
+        fn test_legacy_query_should_be_answered_to_the_sender() {
+            let (_, remote) = legacy_response();
+            assert_eq!(remote, LEGACY_REMOTE);
+        }
+
+        #[test]
+        fn test_legacy_response_should_copy_the_identification() {
+            let (payload, _) = legacy_response();
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.identification, LEGACY_ID);
+        }
+
+        #[test]
+        fn test_legacy_response_should_repeat_the_question() {
+            let (payload, _) = legacy_response();
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            assert_eq!(result.question_record_count, 1);
+            assert_eq!(result.questions.len(), 1);
+            let question = &result.questions[0];
+            assert_eq!(question.name.labels.as_slice(), ["cresco", "local"]);
+            assert_eq!(question.question_type, DnsQuestionType::A);
+        }
+
+        #[test]
+        fn test_legacy_response_should_have_a_short_ttl() {
+            let (payload, _) = legacy_response();
+            let result = DnsRepr::from_bytes(&payload).expect("failed to create repr from bytes");
+            let answer: &DnsAnswer = result.answers.get(0).expect("no answers in response");
+            assert!(answer.ttl > 0 && answer.ttl <= 10);
+            assert_eq!(answer.record, DnsRecord::A { addr: TEST_IP });
+        }
+
+        #[test]
         fn test_query_for_another_host_should_be_ignored() {
             let mut server = MdnsServer::new();
             #[rustfmt::skip]

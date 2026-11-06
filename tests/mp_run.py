@@ -5,7 +5,14 @@ import sys
 
 def main() -> int:
     process = subprocess.Popen(
-        ["mpremote", "connect", os.environ["MP_PORT"], "run", sys.argv[1]],
+        [
+            "mpremote",
+            "connect",
+            os.environ["MP_PORT"],
+            "soft-reset",
+            "run",
+            sys.argv[1],
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

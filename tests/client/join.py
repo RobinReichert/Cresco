@@ -43,6 +43,7 @@ def main() -> int:
         return 1
     finally:
         s.close()
+        wlan.disconnect()
         wlan.active(False)
 
 

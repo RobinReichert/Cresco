@@ -1,8 +1,14 @@
-use core::net::Ipv4Addr;
 use defmt::{info, warn};
 use embassy_futures::select::{Either, select};
-use embassy_net::{IpAddress, IpEndpoint, Stack, udp::PacketMetadata, udp::UdpSocket};
-use logic::dns::{DnsAction, DnsServer, mdns::MdnsServer, poison::PoisonedDnsServer};
+use embassy_net::{
+    IpAddress, Stack,
+    udp::{PacketMetadata, UdpSocket},
+};
+use logic::dns::{
+    DnsAction, DnsServer,
+    mdns::{MDNS_GROUP, MDNS_PORT, MdnsServer},
+    poison::PoisonedDnsServer,
+};
 
 #[embassy_executor::task]
 pub async fn dns_task(stack: Stack<'static>) {
@@ -26,17 +32,21 @@ pub async fn dns_task(stack: Stack<'static>) {
     let mut in_buf = [0u8; 1024];
 
     loop {
-        if let Ok((n, remote)) = socket.recv_from(&mut in_buf).await {
-            let response = dns_server_logic.handle_message(&in_buf[..n]);
-            if let DnsAction::SendPacket { payload, len } = response {
+        if let Ok((n, source)) = socket.recv_from(&mut in_buf).await {
+            let IpAddress::Ipv4(addr) = source.endpoint.addr;
+            let response =
+                dns_server_logic.handle_message(&in_buf[..n], (addr, source.endpoint.port));
+            if let DnsAction::SendPacket {
+                payload,
+                len,
+                remote,
+            } = response
+            {
                 let _ = socket.send_to(&payload[..len], remote).await;
             }
         }
     }
 }
-
-const MDNS_GROUP: Ipv4Addr = Ipv4Addr::new(224, 0, 0, 251);
-const MDNS_PORT: u16 = 5353;
 
 #[embassy_executor::task]
 pub async fn mdns_task(stack: Stack<'static>) {
@@ -57,8 +67,6 @@ pub async fn mdns_task(stack: Stack<'static>) {
     );
     socket.bind(MDNS_PORT).expect("mDNS bind failed");
 
-    let destination = IpEndpoint::new(IpAddress::Ipv4(MDNS_GROUP), MDNS_PORT);
-
     loop {
         stack.wait_config_up().await;
 
@@ -73,7 +81,7 @@ pub async fn mdns_task(stack: Stack<'static>) {
         loop {
             let event = select(socket.recv_from(&mut in_buf), stack.wait_config_down()).await;
 
-            let (n, remote) = match event {
+            let (n, source) = match event {
                 Either::First(Ok((n, remote))) => (n, remote),
                 Either::First(Err(_)) => continue,
                 Either::Second(()) => break,
@@ -82,10 +90,17 @@ pub async fn mdns_task(stack: Stack<'static>) {
                 continue;
             };
 
-            let action = mdns_server.handle_message(&in_buf[..n], config.address.address());
-
-            if let DnsAction::SendPacket { payload, len } = action {
-                let result = socket.send_to(&payload[..len], remote.endpoint).await;
+            let IpAddress::Ipv4(addr) = source.endpoint.addr;
+            if let DnsAction::SendPacket {
+                payload,
+                len,
+                remote,
+            } = mdns_server.handle_message(
+                &in_buf[..n],
+                config.address.address(),
+                (addr, source.endpoint.port),
+            ) {
+                let _ = socket.send_to(&payload[..len], remote).await;
             }
         }
 

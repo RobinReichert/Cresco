@@ -52,7 +52,20 @@ traceback, a crash or no output.
 
 | Script | What it checks |
 | --- | --- |
-| `tests/client/join.py` | The portal accepts credentials |
+| `dns.py` | The portal's DNS answers every name with its own IP |
+| `join.py` | The portal accepts credentials |
+| `mdns_legacy.py` | A query from a random port is answered to the sender |
+| `mdns_resolver.py` | `getaddrinfo("cresco.local")` resolves to an address |
+| `mdns_normal.py` | A query from port 5353 is answered to the multicast group |
+
+The order matters. `dns.py` needs the portal, which only exists until `join.py`
+has provisioned the device, so it runs first. `join.py` still runs if the DNS
+test fails, because the two do not depend on each other. The mDNS tests need
+the device on the Wi-Fi network, so they only run after a successful join. They
+do not depend on each other.
+
+`mdns_normal.py` binds port 5353 before it connects, because the port is taken
+as soon as the client board is on the network.
 
 ## Setup
 

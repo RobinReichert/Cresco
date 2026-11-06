@@ -6,13 +6,12 @@ import wifi_credentials
 
 TIMEOUT = 30
 ATTEMPTS = 30
-NAME = b"\x06cresco\x05local\x00"
 QUERY = (
     b"\x00\x00"  # id: mDNS queries use 0
     b"\x00\x00"  # flags: standard query
     b"\x00\x01"  # 1 question
     b"\x00\x00\x00\x00\x00\x00"  # no answer, authority or extra records
-    + NAME
+    b"\x06cresco\x05local\x00"  # name as length-prefixed labels, 0 ends it
     + b"\x00\x01"  # type A
     b"\x00\x01"  # class IN
 )

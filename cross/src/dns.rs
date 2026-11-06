@@ -86,7 +86,6 @@ pub async fn mdns_task(stack: Stack<'static>) {
                 Either::First(Err(_)) => continue,
                 Either::Second(()) => break,
             };
-
             let Some(config) = stack.config_v4() else {
                 continue;
             };

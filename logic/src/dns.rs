@@ -822,6 +822,8 @@ mod test {
 
 pub mod mdns {
 
+    use defmt::info;
+
     use super::*;
 
     const MAX_RESPONSE_SIZE: usize = 256;
@@ -846,6 +848,7 @@ pub mod mdns {
                 Ok(m) => m,
                 Err(_) => return DnsAction::Ignore,
             };
+            info!("message: {:?}", message);
             if message.message_type != DnsMessageType::Query {
                 return DnsAction::Ignore;
             }
@@ -886,6 +889,7 @@ pub mod mdns {
                 questions:              if legacy_query {message.questions} else {Vec::new()},
                 answers,
             };
+            info!("response: {:?}", response);
             let mut payload = [0u8; MAX_RESPONSE_SIZE];
             let len = match response.emit(&mut payload) {
                 Ok(l) => l,

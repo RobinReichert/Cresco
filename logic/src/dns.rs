@@ -9,8 +9,8 @@ const CNAME_CODE: u16 = 5;
 const MX_CODE: u16 = 15;
 const TXT_CODE: u16 = 16;
 const IN_FLAG_VALUE: u16 = 1;
-const MAX_QUESIONS: usize = 8;
-const MAX_ANSWERS: usize = 8;
+const MAX_QUESIONS: usize = 32;
+const MAX_ANSWERS: usize = 32;
 
 pub enum DnsAction {
     SendPacket {

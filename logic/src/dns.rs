@@ -190,6 +190,7 @@ pub(super) enum DnsRecord<'a> {
     Cname   { name: NameView<'a> },
     Mx      { priority: u16, name: NameView<'a> },
     Txt     { data: &'a [u8] },
+    Other,
 }
 
 impl<'a> DnsRecord<'a> {
@@ -239,7 +240,7 @@ impl<'a> DnsRecord<'a> {
             TXT_CODE => DnsRecord::Txt {
                 data: &buffer[offset..end],
             },
-            _ => return None,
+            _ => DnsRecord::Other {},
         };
         Some((record, end))
     }
@@ -281,6 +282,7 @@ impl<'a> DnsRecord<'a> {
                 data[offset..offset + txt.len()].copy_from_slice(txt);
                 Ok((offset + txt.len(), txt.len() as u16, TXT_CODE))
             }
+            DnsRecord::Other { .. } => Err(()),
         }
     }
 }

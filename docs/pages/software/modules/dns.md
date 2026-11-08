@@ -136,10 +136,7 @@ not the AP stack `PoisonedDnsServer` runs on.
 **Behaviour:**
 
 - Parses the incoming packet.
-Returns `DnsAction::Ignore` if it cannot be parsed
-— most multicast traffic on the group is other
-devices' announcements using record types this codec does not
-implement (e.g. `PTR`, `SRV`), so this is the common case.
+Returns `DnsAction::Ignore` if it cannot be parsed.
 - Ignores anything that is not a `Query`,
 since responses from other devices arrive on the same multicast group.
 - Scans **every** question in the packet for one that is type `A` and whose

@@ -721,6 +721,19 @@ mod test {
     }
 
     #[test]
+    fn test_record_other_decode_encode_should_be_error() {
+        let data = [0u8; 64];
+        let (result, offset) =
+            DnsRecord::from_bytes(&data, 0, 12, 6).expect("failed to create record from bytes");
+        assert_eq!(result, DnsRecord::Other);
+        assert_eq!(offset, 6);
+        let mut buffer = [0u8; 64];
+        result
+            .emit(&mut buffer, 0)
+            .expect_err("emitting other should fail");
+    }
+
+    #[test]
     fn test_answer_encode_decode_should_be_equal() {
         let name = NameView {
             labels: heapless::Vec::from_iter(["test", "com"]),

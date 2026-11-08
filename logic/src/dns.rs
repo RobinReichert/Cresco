@@ -9,8 +9,8 @@ const CNAME_CODE: u16 = 5;
 const MX_CODE: u16 = 15;
 const TXT_CODE: u16 = 16;
 const IN_FLAG_VALUE: u16 = 1;
-const MAX_QUESIONS: usize = 8;
-const MAX_ANSWERS: usize = 8;
+const MAX_QUESIONS: usize = 32;
+const MAX_ANSWERS: usize = 32;
 
 pub enum DnsAction {
     SendPacket {
@@ -190,6 +190,7 @@ pub(super) enum DnsRecord<'a> {
     Cname   { name: NameView<'a> },
     Mx      { priority: u16, name: NameView<'a> },
     Txt     { data: &'a [u8] },
+    Other,
 }
 
 impl<'a> DnsRecord<'a> {
@@ -239,7 +240,7 @@ impl<'a> DnsRecord<'a> {
             TXT_CODE => DnsRecord::Txt {
                 data: &buffer[offset..end],
             },
-            _ => return None,
+            _ => DnsRecord::Other {},
         };
         Some((record, end))
     }
@@ -281,6 +282,7 @@ impl<'a> DnsRecord<'a> {
                 data[offset..offset + txt.len()].copy_from_slice(txt);
                 Ok((offset + txt.len(), txt.len() as u16, TXT_CODE))
             }
+            DnsRecord::Other { .. } => Err(()),
         }
     }
 }
@@ -716,6 +718,19 @@ mod test {
             DnsRecord::from_bytes(&buffer, 0, 16, 11).expect("failed to create record from bytes");
         assert_eq!(result, record);
         assert_eq!(offset, 11);
+    }
+
+    #[test]
+    fn test_record_other_decode_encode_should_be_error() {
+        let data = [0u8; 64];
+        let (result, offset) =
+            DnsRecord::from_bytes(&data, 0, 12, 6).expect("failed to create record from bytes");
+        assert_eq!(result, DnsRecord::Other);
+        assert_eq!(offset, 6);
+        let mut buffer = [0u8; 64];
+        result
+            .emit(&mut buffer, 0)
+            .expect_err("emitting other should fail");
     }
 
     #[test]

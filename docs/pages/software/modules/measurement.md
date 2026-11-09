@@ -85,3 +85,6 @@ driver/web boundary:
 `MeasurementStatus` is held in a `Mutex`, not a channel: every update
 unconditionally replaces the previous value, so a reader always sees the
 current status rather than draining a queue of stale ones.
+
+`CalibrationAborted` is set when something other than the expected calibration
+point arrives while the driver waits for one (e.g. an abort).

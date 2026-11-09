@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cresco Calibration</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-canvas min-h-screen m-0 p-4 sm:p-6">
+    <div class="max-w-2xl mx-auto">
+        <header class="relative mb-4 text-center">
+            <a href="/" aria-label="Back to dashboard"
+               class="absolute left-0 top-0 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 ring-1 ring-black/5 shadow-sm text-label hover:text-primary transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </a>
+            <h1 id="title" class="text-gray-800 text-xl font-semibold">Calibrate</h1>
+        </header>
+
+        <div class="bg-white/70 backdrop-blur-md ring-1 ring-black/5 shadow-sm rounded-2xl p-5">
+            <p id="step-label" class="text-label text-xs font-bold mb-1"></p>
+            <p id="instruction" class="text-gray-800 text-sm mb-4"></p>
+
+            <div id="value-field" class="mb-4 hidden">
+                <label for="actual" id="actual-label" class="block mb-1 font-bold text-label text-sm"></label>
+                <input type="number" id="actual" step="any" inputmode="decimal"
+                       class="w-full px-3 py-3 border border-border rounded-md box-border text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-border-focus" />
+            </div>
+
+            <p id="error" role="alert" class="hidden mb-4 text-danger text-sm"></p>
+
+            <button type="button" id="next"
+                    class="w-full py-3 bg-secondary hover:bg-secondary-hover text-white border-none rounded-md text-base cursor-pointer transition-colors duration-300"></button>
+            <a id="cancel" href="/"
+               class="block mt-3 text-center text-label text-sm no-underline hover:text-primary transition-colors">Cancel</a>
+        </div>
+    </div>
+
+    <script>
+    const key = location.pathname.endsWith('/ec') ? 'ec' : 'ph';
+    const sensor = key === 'ec' ? 'EC' : 'pH';
+    const steps = [
+        { label: 'Start', text: `You need two reference solutions with a known ${sensor} value.`, button: 'Start calibration' },
+        { label: 'Point 1 of 2', text: `Rinse the ${sensor} probe, place it in the first solution and enter that solution's ${sensor} value.`, button: 'Measure', input: true },
+        { label: 'Point 2 of 2', text: `Rinse the ${sensor} probe, place it in the second solution and enter that solution's ${sensor} value.`, button: 'Measure', input: true },
+        { label: 'Done', text: `${sensor} calibration succeeded.`, button: 'Back to dashboard' },
+    ];
+    let step = 0;
+    let busy = false;
+
+    async function post(path, params = {}) {
+        const response = await fetch(path, { method: 'POST', body: new URLSearchParams(params) });
+        if (!response.ok) throw new Error('request rejected');
+    }
+
+    async function waitForStatus(done) {
+        const deadline = Date.now() + 15000;
+        while (Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const { status } = await (await fetch('/api/calibration/status')).json();
+            if (done(status)) return status;
+        }
+        throw new Error('The device did not respond.');
+    }
+
+    // The calibration has ended on the device, so the flow starts over.
+    const failures = {
+        probe_read_failed: `The ${sensor} probe could not be read. Check the connection and start again.`,
+        calibration_failed: 'The two readings were identical. Use two different solutions and start again.',
+        calibration_aborted: 'The calibration was cancelled. Start again.',
+    };
+    const ended = status => Object.assign(new Error(failures[status] ?? 'The calibration failed.'), { reset: true });
+
+    function actualValue() {
+        const value = document.getElementById('actual').value;
+        if (value === '') throw new Error(`Enter the ${sensor} value of the solution.`);
+        return value;
+    }
+
+    const actions = [
+        async () => {
+            await post('/api/calibration/start', { sensor: key });
+            await waitForStatus(s => s === 'awaiting_first_point');
+        },
+        async () => {
+            await post('/api/calibration/point', { sensor: key, actual: actualValue() });
+            const status = await waitForStatus(s => s !== 'awaiting_first_point');
+            if (status !== 'awaiting_second_point') throw ended(status);
+        },
+        async () => {
+            await post('/api/calibration/point', { sensor: key, actual: actualValue() });
+            const status = await waitForStatus(s => s !== 'awaiting_second_point');
+            if (status !== 'calibration_succeeded') throw ended(status);
+        },
+    ];
+
+    function showError(message) {
+        const error = document.getElementById('error');
+        error.textContent = message;
+        error.classList.toggle('hidden', !message);
+    }
+
+    function render() {
+        const s = steps[step];
+        document.getElementById('title').textContent = `Calibrate ${sensor}`;
+        document.getElementById('step-label').textContent = s.label;
+        document.getElementById('instruction').textContent = s.text;
+        document.getElementById('actual-label').textContent = `Actual ${sensor} value`;
+        document.getElementById('value-field').classList.toggle('hidden', !s.input);
+        document.getElementById('cancel').classList.toggle('hidden', step === steps.length - 1);
+        document.getElementById('next').textContent = busy ? 'Working…' : s.button;
+        document.getElementById('next').disabled = busy;
+    }
+
+    document.getElementById('next').addEventListener('click', async () => {
+        if (step === steps.length - 1) { location.href = '/'; return; }
+        showError('');
+        busy = true;
+        render();
+        try {
+            await actions[step]();
+            step += 1;
+            document.getElementById('actual').value = '';
+        } catch (e) {
+            showError(e instanceof TypeError ? 'Could not reach the device.' : e.message);
+            if (e.reset) step = 0;
+        }
+        busy = false;
+        render();
+    });
+
+    // Leaving mid-calibration (cancel, back, reload, closing the tab) would leave the device waiting for a point.
+    addEventListener('pagehide', () => {
+        if (busy || step === 1 || step === 2) navigator.sendBeacon('/api/calibration/abort');
+    });
+    render();
+    </script>
+</body>
+</html>

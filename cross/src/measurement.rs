@@ -22,7 +22,8 @@ pub enum MeasurementCommand {
     PhMeasurement { actual_ph: Float },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MeasurementStatus {
     NotCalibratedYet,
     AwaitingFirstPoint,
@@ -30,6 +31,7 @@ pub enum MeasurementStatus {
     ProbeReadFailed,
     CalibrationFailed,
     CalibrationSucceeded,
+    CalibrationAborted,
 }
 
 pub type StatusCell = Mutex<CriticalSectionRawMutex, MeasurementStatus>;
@@ -97,6 +99,8 @@ pub async fn measurement_task(
                             }
                         }
                     } else {
+                        calibrating = false;
+                        *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
                 )
@@ -119,6 +123,8 @@ pub async fn measurement_task(
                             }
                         }
                     } else {
+                        calibrating = false;
+                        *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
                 )
@@ -142,6 +148,8 @@ pub async fn measurement_task(
                             }
                         }
                     } else {
+                        calibrating = false;
+                        *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
                 )
@@ -164,6 +172,8 @@ pub async fn measurement_task(
                             }
                         }
                     } else {
+                        calibrating = false;
+                        *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
                 )

@@ -1,6 +1,6 @@
 use crate::Float;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize)]
 pub struct Measurements {
     pub ph: Option<Float>,
     pub ec: Option<Float>,

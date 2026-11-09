@@ -1,6 +1,9 @@
 use crate::web::{
     pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS},
-    services::calibration::{self, CalibrationState},
+    services::{
+        calibration::{self, CalibrationState},
+        measurements,
+    },
 };
 use picoserve::{
     self, AppBuilder,
@@ -42,6 +45,7 @@ impl AppBuilder for CrescoApp {
             )
             .route("/calibrate/ph", get(calibrate_page))
             .route("/calibrate/ec", get(calibrate_page))
+            .route("/api/measurements", get(measurements::measurements))
             .route("/api/calibration/status", get(calibration::status))
             .route("/api/calibration/start", post(calibration::start))
             .route("/api/calibration/point", post(calibration::point))

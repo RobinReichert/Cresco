@@ -2,3 +2,4 @@ pub mod calibration;
 pub mod captive_login;
 pub mod captive_redirect;
 pub mod captive_ssids;
+pub mod measurements;

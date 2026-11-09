@@ -1,5 +1,5 @@
 use crate::web::{
-    pages::{DASHBOARD_HTML, INDEX_HTML, PLANT_WEBP, STYLE_CSS},
+    pages::{CALIBRATE_HTML, DASHBOARD_HTML, INDEX_HTML, PLANT_WEBP, STYLE_CSS},
     services::{
         captive_login::CaptiveLogin,
         captive_redirect::CaptiveRedirect,
@@ -13,6 +13,14 @@ use picoserve::{
     response::{File, StatusCode},
     routing::{get, get_service, post_service},
 };
+
+async fn calibrate_page() -> impl picoserve::response::IntoResponse {
+    (
+        StatusCode::OK,
+        [("content-type", "text/html; charset=utf-8")],
+        CALIBRATE_HTML,
+    )
+}
 
 pub struct CrescoApp {}
 
@@ -36,5 +44,7 @@ impl AppBuilder for CrescoApp {
                     )
                 }),
             )
+            .route("/calibrate/ph", get(calibrate_page))
+            .route("/calibrate/ec", get(calibrate_page))
     }
 }

@@ -18,7 +18,10 @@ use cross::{
     stepper::{Stepper, drv8833::Drv8833},
     storage::CredentialStorage,
     web::{
-        self, captive_app::CaptiveApp, cresco_app::CrescoApp, services::captive_ssids::SsidsList,
+        self,
+        captive_app::CaptiveApp,
+        cresco_app::CrescoApp,
+        services::{calibration::CalibrationState, captive_ssids::SsidsList},
     },
     wifi::{self, connection},
 };
@@ -123,7 +126,19 @@ async fn main(spawner: Spawner) -> ! {
         spawner.must_spawn(web::captive_web_task(task_id, ap_stack, captive_app));
     }
 
-    let cresco_app = mk_static!(AppRouter<CrescoApp>, CrescoApp {}.build_app());
+    let commands = mk_static!(
+        Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
+        Channel::new()
+    );
+    let status = mk_static!(StatusCell, Mutex::new(MeasurementStatus::NotCalibratedYet));
+
+    let cresco_app = mk_static!(
+        AppRouter<CrescoApp>,
+        CrescoApp {
+            calibration: CalibrationState { commands, status },
+        }
+        .build_app()
+    );
 
     for task_id in 0..web::CRESCO_APP_TASK_POOL_SIZE {
         spawner.must_spawn(web::cresco_web_task(task_id, sta_stack, cresco_app));
@@ -144,12 +159,6 @@ async fn main(spawner: Spawner) -> ! {
     let shared_adc = mk_static!(SharedAdc<'static>, adc_builder.build(peripherals.ADC1));
     let ph_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ph_pin);
     let ec_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ec_pin);
-
-    let commands = mk_static!(
-        Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
-        Channel::new()
-    );
-    let status = mk_static!(StatusCell, Mutex::new(MeasurementStatus::NotCalibratedYet));
 
     spawner
         .spawn(measurement_task(ph_probe, ec_probe, commands, status))

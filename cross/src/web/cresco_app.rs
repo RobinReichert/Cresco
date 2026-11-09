@@ -1,8 +1,11 @@
-use crate::web::pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS};
+use crate::web::{
+    pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS},
+    services::calibration::{self, CalibrationState},
+};
 use picoserve::{
     self, AppBuilder,
     response::{File, StatusCode},
-    routing::{get, get_service},
+    routing::{get, get_service, post},
 };
 
 async fn calibrate_page() -> impl picoserve::response::IntoResponse {
@@ -13,7 +16,9 @@ async fn calibrate_page() -> impl picoserve::response::IntoResponse {
     )
 }
 
-pub struct CrescoApp {}
+pub struct CrescoApp {
+    pub calibration: CalibrationState,
+}
 
 impl AppBuilder for CrescoApp {
     type PathRouter = impl picoserve::routing::PathRouter;
@@ -37,5 +42,10 @@ impl AppBuilder for CrescoApp {
             )
             .route("/calibrate/ph", get(calibrate_page))
             .route("/calibrate/ec", get(calibrate_page))
+            .route("/api/calibration/status", get(calibration::status))
+            .route("/api/calibration/start", post(calibration::start))
+            .route("/api/calibration/point", post(calibration::point))
+            .route("/api/calibration/abort", post(calibration::abort))
+            .with_state(self.calibration)
     }
 }

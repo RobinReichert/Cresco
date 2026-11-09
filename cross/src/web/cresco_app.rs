@@ -1,17 +1,8 @@
-use crate::web::{
-    pages::{CALIBRATE_HTML, DASHBOARD_HTML, INDEX_HTML, PLANT_WEBP, STYLE_CSS},
-    services::{
-        captive_login::CaptiveLogin,
-        captive_redirect::CaptiveRedirect,
-        captive_ssids::{CaptiveSsids, SsidsList},
-    },
-};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, signal::Signal};
-use logic::wifi::LoginData;
+use crate::web::pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS};
 use picoserve::{
     self, AppBuilder,
     response::{File, StatusCode},
-    routing::{get, get_service, post_service},
+    routing::{get, get_service},
 };
 
 async fn calibrate_page() -> impl picoserve::response::IntoResponse {

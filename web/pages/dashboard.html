@@ -30,12 +30,11 @@
                 <div class="shrink-0 space-y-6">
                     <div>
                         <p class="text-label text-xs font-bold">pH</p>
-                        <p class="text-gray-800 text-2xl font-semibold tabular-nums leading-none mt-1">6.2</p>
-                        <span class="inline-block bg-ok-soft text-ok text-xs font-semibold rounded-full px-2 py-0.5 mt-2">In range</span>
+                        <p id="ph" class="text-gray-800 text-2xl font-semibold tabular-nums leading-none mt-1">…</p>
                     </div>
                     <div>
                         <p class="text-label text-xs font-bold">EC</p>
-                        <p class="text-danger text-lg font-semibold leading-none mt-2">Not calibrated</p>
+                        <p id="ec" class="text-gray-800 text-2xl font-semibold tabular-nums leading-none mt-1">…</p>
                     </div>
                 </div>
             </div>
@@ -97,6 +96,27 @@
     document.getElementById('settings-close').addEventListener('click', () => setDrawer(false));
     overlay.addEventListener('click', () => setDrawer(false));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') setDrawer(false); });
+
+    // A missing value means the sensor is not calibrated yet (or has not been measured since).
+    function showValue(id, value, digits) {
+        const el = document.getElementById(id);
+        el.textContent = value === null ? 'Not calibrated' : value.toFixed(digits);
+        el.className = value === null
+            ? 'text-danger text-lg font-semibold leading-none mt-2'
+            : 'text-gray-800 text-2xl font-semibold tabular-nums leading-none mt-1';
+    }
+
+    async function refresh() {
+        try {
+            const measurements = await (await fetch('/api/measurements')).json();
+            showValue('ph', measurements.ph, 2);
+            showValue('ec', measurements.ec, 2);
+        } catch (e) {
+        }
+    }
+
+    refresh();
+    setInterval(refresh, 10000);
     </script>
 </body>
 </html>

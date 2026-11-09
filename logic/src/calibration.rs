@@ -1,5 +1,7 @@
 use crate::Float;
 
+use sequential_storage::map::SerializationError;
+
 #[derive(Clone, Copy)]
 pub struct Point {
     pub x: Float,
@@ -9,6 +11,35 @@ pub struct Point {
 pub struct Linear {
     m: Option<Float>,
     t: Option<Float>,
+}
+
+impl<'d> sequential_storage::map::Value<'d> for Linear {
+    fn serialize_into(&self, buffer: &mut [u8]) -> Result<usize, SerializationError> {
+        match (self.m, self.t) {
+            (Some(m), Some(t)) => {
+                let m_bytes = m.to_le_bytes();
+                let t_bytes = t.to_le_bytes();
+                buffer[0..m_bytes.len()].copy_from_slice(&m_bytes);
+                buffer[m_bytes.len()..m_bytes.len() + t_bytes.len()].copy_from_slice(&t_bytes);
+                Ok(m_bytes.len() + t_bytes.len())
+            }
+            _ => Err(SerializationError::InvalidData),
+        }
+    }
+
+    fn deserialize_from(buffer: &'d [u8]) -> Result<(Self, usize), SerializationError> {
+        let size_of_m = core::mem::size_of::<Float>();
+        let m = Float::from_le_bytes(buffer[0..size_of_m].try_into().unwrap());
+        let size_of_t = core::mem::size_of::<Float>();
+        let t = Float::from_le_bytes(buffer[size_of_m..size_of_m + size_of_t].try_into().unwrap());
+        Ok((
+            Linear {
+                m: Some(m),
+                t: Some(t),
+            },
+            size_of_t + size_of_m,
+        ))
+    }
 }
 
 impl Linear {

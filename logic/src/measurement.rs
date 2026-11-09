@@ -63,6 +63,17 @@ impl MeasurementManager {
         }
     }
 
+    pub fn with_calibrations(
+        ec_calibration: calibration::Linear,
+        ph_calibration: calibration::Linear,
+    ) -> Self {
+        Self {
+            state: MeasurementState::Start,
+            ec_calibration,
+            ph_calibration,
+        }
+    }
+
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
             (MeasurementState::Start, MeasurementEvent::Start) => {

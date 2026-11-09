@@ -1,13 +1,18 @@
 use crate::{blackboard, probe::AnalogProbe};
+use crate::{shared_flash::SharedFlashInterface, storage::CalibrationStorage};
 use defmt::{info, panic};
+use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_futures::select::{Either, select};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{Duration, Instant, Timer};
 use esp_hal::peripherals::{GPIO0, GPIO1};
+use esp_storage::FlashStorage;
 use logic::{
     Float,
+    calibration::Linear,
     measurement::{MeasurementAction, MeasurementError, MeasurementEvent, MeasurementManager},
 };
+use sequential_storage::cache::NoCache;
 
 pub type ConcretePhProbe<'a> = AnalogProbe<'a, GPIO0<'a>>;
 pub type ConcreteEcProbe<'a> = AnalogProbe<'a, GPIO1<'a>>;
@@ -35,6 +40,8 @@ pub enum MeasurementStatus {
 }
 
 pub type StatusCell = Mutex<CriticalSectionRawMutex, MeasurementStatus>;
+pub type ConcreteCalibrationStorage<'a> =
+    CalibrationStorage<SharedFlashInterface<'a, BlockingAsync<FlashStorage<'static>>>, NoCache>;
 
 #[embassy_executor::task]
 pub async fn measurement_task(
@@ -42,8 +49,17 @@ pub async fn measurement_task(
     mut ec_probe: ConcreteEcProbe<'static>,
     commands: &'static Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
     status: &'static StatusCell,
+    mut calibration_storage: ConcreteCalibrationStorage<'static>,
 ) {
-    let mut manager = MeasurementManager::new();
+    let ph = calibration_storage
+        .get_ph_calibration()
+        .await
+        .unwrap_or_else(|_| Linear::new());
+    let ec = calibration_storage
+        .get_ec_calibration()
+        .await
+        .unwrap_or_else(|_| Linear::new());
+    let mut manager = MeasurementManager::with_calibrations(ec, ph);
     let mut event: Option<MeasurementEvent> = Some(MeasurementEvent::Start);
     let mut calibrating = false;
     loop {

@@ -9,14 +9,14 @@ pub mod cresco_app;
 pub mod pages;
 pub mod services;
 
-pub const CAPTIVE_APP_TASK_POOL_SIZE: usize = 2;
-pub const CRESCO_APP_TASK_POOL_SIZE: usize = 3;
+pub const CAPTIVE_APP_TASK_POOL_SIZE: usize = 4;
+pub const CRESCO_APP_TASK_POOL_SIZE: usize = 6;
 
 static CONFIG: Config<Duration> = Config::new(Timeouts {
     start_read_request: Some(Duration::from_secs(5)),
     read_request: Some(Duration::from_secs(5)),
     write: Some(Duration::from_secs(20)),
-    persistent_start_read_request: None,
+    persistent_start_read_request: Some(Duration::from_secs(5)),
 });
 
 #[embassy_executor::task(pool_size = CAPTIVE_APP_TASK_POOL_SIZE)]

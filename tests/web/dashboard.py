@@ -12,7 +12,9 @@ def main() -> int:
     options = webdriver.ChromeOptions()
     options.binary_location = "/usr/bin/chromium"
     options.add_argument("--headless=new")
+    options.page_load_strategy = "eager"
     driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(30)
     try:
         driver.get(f"http://{args.ip}/")
         print(driver.title)

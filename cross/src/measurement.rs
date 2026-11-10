@@ -61,14 +61,23 @@ pub async fn measurement_task(
         .unwrap_or_else(|_| Linear::new());
     let mut manager = MeasurementManager::with_calibrations(ec, ph);
     let mut event: Option<MeasurementEvent> = Some(MeasurementEvent::Start);
-    let mut calibrating = false;
     loop {
         match manager.handle_event(event.take().expect("no event: this should not happen")) {
             MeasurementAction::WaitForNext => {
-                if calibrating {
-                    calibrating = false;
-                    *status.lock().await = MeasurementStatus::CalibrationSucceeded;
+                event = Some(next_trigger(commands).await);
+            }
+            MeasurementAction::StoreEcCalibration { calibration } => {
+                if !calibration_storage.set_ec_calibration(calibration).await {
+                    info!("could not store the ec calibration");
                 }
+                *status.lock().await = MeasurementStatus::CalibrationSucceeded;
+                event = Some(next_trigger(commands).await);
+            }
+            MeasurementAction::StorePhCalibration { calibration } => {
+                if !calibration_storage.set_ph_calibration(calibration).await {
+                    info!("could not store the ph calibration");
+                }
+                *status.lock().await = MeasurementStatus::CalibrationSucceeded;
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::MeasureEc => {
@@ -89,7 +98,6 @@ pub async fn measurement_task(
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::ShowError { error } => {
-                calibrating = false;
                 *status.lock().await = match error {
                     MeasurementError::NotCalibratedYet => MeasurementStatus::NotCalibratedYet,
                     MeasurementError::CalibrationFailed => MeasurementStatus::CalibrationFailed,
@@ -97,7 +105,6 @@ pub async fn measurement_task(
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::RetrieveEcFirst => {
-                calibrating = true;
                 *status.lock().await = MeasurementStatus::AwaitingFirstPoint;
                 event = Some(
                     if let MeasurementCommand::EcMeasurement { actual_ec } =
@@ -109,13 +116,11 @@ pub async fn measurement_task(
                                 actual_first: actual_ec,
                             },
                             Err(_) => {
-                                calibrating = false;
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
-                        calibrating = false;
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
@@ -133,20 +138,17 @@ pub async fn measurement_task(
                                 actual_second: actual_ec,
                             },
                             Err(_) => {
-                                calibrating = false;
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
-                        calibrating = false;
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
                 )
             }
             MeasurementAction::RetrievePhFirst => {
-                calibrating = true;
                 *status.lock().await = MeasurementStatus::AwaitingFirstPoint;
                 event = Some(
                     if let MeasurementCommand::PhMeasurement { actual_ph } =
@@ -158,13 +160,11 @@ pub async fn measurement_task(
                                 actual_first: actual_ph,
                             },
                             Err(_) => {
-                                calibrating = false;
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
-                        calibrating = false;
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },
@@ -182,13 +182,11 @@ pub async fn measurement_task(
                                 actual_second: actual_ph,
                             },
                             Err(_) => {
-                                calibrating = false;
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
-                        calibrating = false;
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
                         MeasurementEvent::Abort
                     },

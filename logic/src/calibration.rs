@@ -8,6 +8,7 @@ pub struct Point {
     pub y: Float,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Linear {
     m: Option<Float>,
     t: Option<Float>,

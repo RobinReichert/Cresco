@@ -51,6 +51,7 @@ the *driver* that carries it out.
 | `Ignore` | The event was not valid in the current state; do nothing |
 | `MeasureEc` / `MeasurePh` | Read that probe |
 | `Retrieve(Ec/Ph)(First/Second)` | Read probe at Calibration point |
+| `Store(Ec/Ph)Calibration { calibration }` | Calibration succeeded; store it |
 | `WriteMeasurements { ec, ph }` | Write calibrated readings to the blackboard |
 | `ShowError { error }` | Report a `MeasurementError` |
 | `WaitForNext` | Nothing to do; block until the next trigger |

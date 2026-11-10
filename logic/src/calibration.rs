@@ -73,6 +73,7 @@ impl Linear {
 #[cfg(test)]
 mod test {
     use super::*;
+    use sequential_storage::map::Value;
 
     #[test]
     fn test_calibrate_same_x_errors() {
@@ -122,5 +123,34 @@ mod test {
         assert_eq!(linear.apply(0.0).unwrap(), 0.0);
         assert_eq!(linear.apply(2.0).unwrap(), 4.0);
         assert_eq!(linear.apply(1.0).unwrap(), 2.0);
+    }
+
+    const STORED_LEN: usize = 2 * core::mem::size_of::<Float>();
+
+    fn calibrated(first: Point, second: Point) -> Linear {
+        let mut linear = Linear::new();
+        assert_eq!(linear.calibrate(first, second), Ok(()));
+        linear
+    }
+
+    #[test]
+    fn test_serialize_uncalibrated_errors() {
+        let mut buffer = [0u8; STORED_LEN];
+        assert_eq!(
+            Linear::new().serialize_into(&mut buffer),
+            Err(SerializationError::InvalidData)
+        );
+    }
+
+    #[test]
+    fn test_serialize_deserialize_round_trip() {
+        let original = calibrated(Point { x: 1.5, y: 3.0 }, Point { x: 4.5, y: -2.0 });
+        let mut buffer = [0u8; STORED_LEN];
+        let len = original.serialize_into(&mut buffer).unwrap();
+
+        let (restored, _) = Linear::deserialize_from(&buffer[..len]).unwrap();
+
+        assert_eq!(restored, original);
+        assert!(restored.is_calibrated());
     }
 }

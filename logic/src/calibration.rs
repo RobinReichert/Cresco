@@ -53,7 +53,7 @@ impl Linear {
     }
 
     pub fn calibrate(&mut self, first: Point, second: Point) -> Result<(), ()> {
-        if second.x == first.x {
+        if second.x == first.x || second.y == first.y {
             return Err(());
         }
         let m = (second.y - first.y) / (second.x - first.x);

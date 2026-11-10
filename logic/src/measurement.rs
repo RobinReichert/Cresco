@@ -43,6 +43,8 @@ pub enum MeasurementAction {
     RetrieveEcSecond,
     RetrievePhFirst,
     RetrievePhSecond,
+    StoreEcCalibration { calibration: calibration::Linear },
+    StorePhCalibration { calibration: calibration::Linear },
     WaitForNext,
 }
 
@@ -56,6 +58,17 @@ impl MeasurementManager {
     pub fn new() -> Self {
         let ec_calibration = calibration::Linear::new();
         let ph_calibration = calibration::Linear::new();
+        Self {
+            state: MeasurementState::Start,
+            ec_calibration,
+            ph_calibration,
+        }
+    }
+
+    pub fn with_calibrations(
+        ec_calibration: calibration::Linear,
+        ph_calibration: calibration::Linear,
+    ) -> Self {
         Self {
             state: MeasurementState::Start,
             ec_calibration,
@@ -151,7 +164,9 @@ impl MeasurementManager {
                         x: second,
                     },
                 ) {
-                    Ok(_) => MeasurementAction::WaitForNext,
+                    Ok(_) => MeasurementAction::StoreEcCalibration {
+                        calibration: self.ec_calibration,
+                    },
                     Err(_) => MeasurementAction::ShowError {
                         error: MeasurementError::CalibrationFailed,
                     },
@@ -205,7 +220,9 @@ impl MeasurementManager {
                         x: second,
                     },
                 ) {
-                    Ok(_) => MeasurementAction::WaitForNext,
+                    Ok(_) => MeasurementAction::StorePhCalibration {
+                        calibration: self.ph_calibration,
+                    },
                     Err(_) => MeasurementAction::ShowError {
                         error: MeasurementError::CalibrationFailed,
                     },
@@ -223,6 +240,12 @@ impl MeasurementManager {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn linear(first: Point, second: Point) -> calibration::Linear {
+        let mut linear = calibration::Linear::new();
+        linear.calibrate(first, second).unwrap();
+        linear
+    }
 
     fn started_manager() -> MeasurementManager {
         let mut manager = MeasurementManager::new();
@@ -253,7 +276,9 @@ mod test {
                 second: 10.0,
                 actual_second: 100.0,
             }),
-            MeasurementAction::WaitForNext
+            MeasurementAction::StoreEcCalibration {
+                calibration: linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 },)
+            }
         );
         assert_eq!(
             manager.handle_event(MeasurementEvent::StartPhCalibration),
@@ -271,7 +296,9 @@ mod test {
                 second: 10.0,
                 actual_second: 17.0,
             }),
-            MeasurementAction::WaitForNext
+            MeasurementAction::StorePhCalibration {
+                calibration: linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 },)
+            }
         );
         manager
     }
@@ -397,7 +424,9 @@ mod test {
                 second: 10.0,
                 actual_second: 100.0,
             }),
-            MeasurementAction::WaitForNext
+            MeasurementAction::StoreEcCalibration {
+                calibration: linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 },)
+            }
         );
     }
 
@@ -479,7 +508,9 @@ mod test {
                 second: 10.0,
                 actual_second: 17.0,
             }),
-            MeasurementAction::WaitForNext
+            MeasurementAction::StorePhCalibration {
+                calibration: linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 },)
+            }
         );
     }
 

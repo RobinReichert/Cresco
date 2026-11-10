@@ -16,7 +16,7 @@ use cross::{
     shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
     shared_flash::{SharedFlash, SharedFlashInterface},
     stepper::{Stepper, drv8833::Drv8833},
-    storage::CredentialStorage,
+    storage::{CalibrationStorage, CredentialStorage},
     web::{
         self,
         captive_app::CaptiveApp,
@@ -93,6 +93,8 @@ async fn main(spawner: Spawner) -> ! {
     );
     let credential_storage =
         CredentialStorage::new(SharedFlashInterface::new(shared_flash), NoCache::new());
+    let calibration_storage =
+        CalibrationStorage::new(SharedFlashInterface::new(shared_flash), NoCache::new());
 
     let ssids: Mutex<CriticalSectionRawMutex, SsidsList> = Mutex::new(Vec::new());
     let ssids: &'static _ = mk_static!(Mutex<CriticalSectionRawMutex, SsidsList>, ssids);
@@ -161,7 +163,13 @@ async fn main(spawner: Spawner) -> ! {
     let ec_probe = AnalogProbe::new(AdcInterface::new(shared_adc), ec_pin);
 
     spawner
-        .spawn(measurement_task(ph_probe, ec_probe, commands, status))
+        .spawn(measurement_task(
+            ph_probe,
+            ec_probe,
+            commands,
+            status,
+            calibration_storage,
+        ))
         .ok();
 
     loop {

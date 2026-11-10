@@ -9,8 +9,8 @@ pub mod cresco_app;
 pub mod pages;
 pub mod services;
 
-pub const CAPTIVE_APP_TASK_POOL_SIZE: usize = 4;
-pub const CRESCO_APP_TASK_POOL_SIZE: usize = 6;
+pub const CAPTIVE_APP_TASK_POOL_SIZE: usize = 2;
+pub const CRESCO_APP_TASK_POOL_SIZE: usize = 4;
 
 static CONFIG: Config<Duration> = Config::new(Timeouts {
     start_read_request: Some(Duration::from_secs(5)),

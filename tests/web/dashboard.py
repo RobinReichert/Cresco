@@ -1,4 +1,5 @@
 import argparse
+import shutil
 import sys
 
 from selenium import webdriver
@@ -7,11 +8,15 @@ from selenium import webdriver
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("ip", help="IP address of the device")
+    parser.add_argument("--headed", action="store_true", help="show the browser window")
     args = parser.parse_args()
 
     options = webdriver.ChromeOptions()
-    options.binary_location = "/usr/bin/chromium"
-    options.add_argument("--headless=new")
+    chromium = shutil.which("chromium")
+    if chromium:
+        options.binary_location = chromium
+    if not args.headed:
+        options.add_argument("--headless=new")
     options.page_load_strategy = "eager"
     driver = webdriver.Chrome(options=options)
     driver.set_page_load_timeout(30)

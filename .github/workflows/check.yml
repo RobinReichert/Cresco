@@ -276,8 +276,8 @@ jobs:
       - name: mDNS normal query
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
         run: uv run python tests/mp_run.py tests/client/mdns_normal.py
-      - name: printIp
+      - name: Dashboard
         if: ${{ !cancelled() && steps.mdns_resolver.outcome == 'success' }}
         env:
-          IP: ${{ steps.mdns_resolver.outputs.ip }}
-        run: echo "$IP"
+          CRESCO_IP: ${{ steps.mdns_resolver.outputs.ip }}
+        run: uv run python tests/web/dashboard.py "$CRESCO_IP"

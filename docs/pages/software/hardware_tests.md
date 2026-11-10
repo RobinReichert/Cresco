@@ -48,6 +48,15 @@ so the runner decides by the output. A test passes if the script prints a line
 that is exactly `PASS`. Anything else counts as a failure: a `FAIL` line, a
 traceback, a crash or no output.
 
+## Passing values to later steps
+
+A script can hand a value to later workflow steps by printing a line
+`OUTPUT <name>=<value>`. `tests/mp_run.py` appends it to the file in
+`GITHUB_OUTPUT`, so it becomes a step output. For example `mdns_resolver.py`
+prints `OUTPUT ip=<address>`, and a later step reads it as
+{% raw %}`${{ steps.mdns_resolver.outputs.ip }}`{% endraw %} (the step needs an
+`id`).
+
 ## Tests
 
 | Script | What it checks |

@@ -33,6 +33,7 @@ def main() -> int:
             print("could not resolve cresco.local after", ATTEMPTS, "attempts")
             return 1
         print("cresco.local ->", addr)
+        print("OUTPUT ip=" + addr)
         return 0
     except OSError as e:
         print(e)

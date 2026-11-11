@@ -11,14 +11,25 @@ from tests.web.dashboard import DashboardPage
 
 PAGE_LOAD_TIMEOUT = 30
 
-type TestFunc = Callable[[WebDriver, IPv4Address], int]
+type TestFunc = Callable[[WebDriver, IPv4Address], None]
 
 
-def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> int:
-    dashboard = DashboardPage(driver, address)
+def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
+    dashboard = DashboardPage.open(driver, str(address))
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
-    return 0
+    settings = dashboard.open_settings()
+    dashboard = settings.close_settings()
+    settings = dashboard.open_settings()
+    calibrate_ec = settings.goto_calibrate_ec()
+    title = calibrate_ec.get_title()
+    assert title == "Cresco Calibration", f"unexpected title: {title!r}"
+    calibrate_ec.start()
+    calibrate_ec.submit_point(4.0)
+    calibrate_ec.submit_point(6.0)
+    dashboard = calibrate_ec.finish()
+    title = dashboard.get_title()
+    assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
 
 
 TEST_FUNCTIONS: dict[str, TestFunc] = {"dashboard_integrity": dashboard_integrity_test}
@@ -40,7 +51,8 @@ def main() -> int:
     driver = webdriver.Chrome(options=options)
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
     try:
-        return TEST_FUNCTIONS[args.test_name](driver, args.ip)
+        TEST_FUNCTIONS[args.test_name](driver, args.ip)
+        return 0
     except Exception as e:
         print(e)
     finally:

@@ -30,6 +30,16 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard = calibrate_ec.finish()
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    settings = dashboard.open_settings()
+    calibrate_ph = settings.goto_calibrate_ph()
+    title = calibrate_ph.get_title()
+    assert title == "Cresco Calibration", f"unexpphted title: {title!r}"
+    calibrate_ph.start()
+    calibrate_ph.submit_point(1.0)
+    calibrate_ph.submit_point(2.0)
+    dashboard = calibrate_ph.finish()
+    title = dashboard.get_title()
+    assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
 
 
 TEST_FUNCTIONS: dict[str, TestFunc] = {"dashboard_integrity": dashboard_integrity_test}

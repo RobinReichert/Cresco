@@ -280,4 +280,4 @@ jobs:
         if: ${{ !cancelled() && steps.mdns_resolver.outcome == 'success' }}
         env:
           CRESCO_IP: ${{ steps.mdns_resolver.outputs.ip }}
-        run: uv run python -m tests/web/tests "$CRESCO_IP" dashboard_integrity
+        run: uv run python -m tests.web.tests "$CRESCO_IP" dashboard_integrity

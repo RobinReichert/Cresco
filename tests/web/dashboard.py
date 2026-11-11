@@ -1,32 +1,30 @@
-import argparse
-import shutil
-import sys
+import ipaddress
 
-from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as condition
+from selenium.webdriver.remote.webdriver import WebDriver
 
-
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("ip", help="IP address of the device")
-    parser.add_argument("--headed", action="store_true", help="show the browser window")
-    args = parser.parse_args()
-
-    options = webdriver.ChromeOptions()
-    chromium = shutil.which("chromium")
-    if chromium:
-        options.binary_location = chromium
-    if not args.headed:
-        options.add_argument("--headless=new")
-    options.page_load_strategy = "eager"
-    driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(30)
-    try:
-        driver.get(f"http://{args.ip}/")
-        print(driver.title)
-        return 0
-    finally:
-        driver.quit()
+from tests.web.base_page import BasePage
+from tests.web.settings import SettingsPage
+from tests.web.helpers import value_loaded
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+class DashboardPage(BasePage):
+    def __init__(self, driver: WebDriver, ip: ipaddress.IPv4Address):
+        super().__init__(driver)
+        driver.get(f"http://{str(ip)}/")
+
+    def get_title(self) -> str:
+        return self.driver.title
+
+    def get_ph(self) -> str:
+        return self.wait.until(value_loaded("ph"))
+
+    def get_ec(self) -> str:
+        return self.wait.until(value_loaded("ec"))
+
+    def goto_settings(self) -> SettingsPage:
+        self.wait.until(
+            condition.element_to_be_clickable((By.ID, "settings-open"))
+        ).click()
+        return SettingsPage(self)

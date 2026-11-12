@@ -16,6 +16,13 @@ class Run:
         self._thread = threading.Thread(target=self._follow)
         self._thread.start()
 
+    def __enter__(self) -> "Run":
+        return self
+
+    def __exit__(self, *_) -> None:
+        self.send("exit")
+        self.wait()
+
     def send(self, message: str) -> None:
         self._transport.serial.write(message.encode() + b"\n")
 

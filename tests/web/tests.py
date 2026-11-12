@@ -29,6 +29,10 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard = DashboardPage.open(driver, str(address))
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    ec = dashboard.get_ec()
+    assert ec == "Not calibrated", f"unexpected ec: {ec!r}"
+    ph = dashboard.get_ph()
+    assert ph == "Not calibrated", f"unexpected ph: {ph!r}"
     settings = dashboard.open_settings()
     dashboard = settings.close_settings()
     settings = dashboard.open_settings()
@@ -53,12 +57,20 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     calibrate_ph.submit_point(1.0)
     set_voltage(runner, "ph", 2.5)
     calibrate_ph.submit_point(2.0)
-    runner.send("exit")
-    runner.wait()
-    assert runner.passed
     dashboard = calibrate_ph.finish()
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    for _ in range(6):
+        time.sleep(20)
+        set_voltage(runner, "ec", 2.0)
+        set_voltage(runner, "ph", 1.5)
+    ec = dashboard.get_ec()
+    print(f"ec: {ec}")
+    ph = dashboard.get_ph()
+    print(f"ph: {ph}")
+    runner.send("exit")
+    runner.wait()
+    assert runner.passed
 
 
 TEST_FUNCTIONS: dict[str, TestFunc] = {"dashboard_integrity": dashboard_integrity_test}

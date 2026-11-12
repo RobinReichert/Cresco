@@ -10,6 +10,7 @@ dev = [
     "pyyaml>=6.0.3",
     "mpremote>=1.29.0",
     "micropython-esp32-stubs>=1.29.0.post1",
+    "selenium>=4.52.0",
 ]
 
 [tool.pyright]

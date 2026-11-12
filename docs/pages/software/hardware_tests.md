@@ -35,6 +35,8 @@ board.
 3. **Flash:** `tests/flash.py` runs `./cresco.sh flash app_embedded`, which
    downloads the firmware with `probe-rs` and resets the board.
 4. **Run the test:** `tests/mp_run.py` runs a script on the client board.
+5. **Check the dashboard:** a browser test opens the dashboard of the device,
+   see [Web tests].
 
 ## Running a test script
 
@@ -47,6 +49,15 @@ output as it arrives. `mpremote` does not return the exit code of the script,
 so the runner decides by the output. A test passes if the script prints a line
 that is exactly `PASS`. Anything else counts as a failure: a `FAIL` line, a
 traceback, a crash or no output.
+
+## Passing values to later steps
+
+A script can hand a value to later workflow steps by printing a line
+`OUTPUT <name>=<value>`. `tests/mp_run.py` appends it to the file in
+`GITHUB_OUTPUT`, so it becomes a step output. For example `mdns_resolver.py`
+prints `OUTPUT ip=<address>`, and a later step reads it as
+{% raw %}`${{ steps.mdns_resolver.outputs.ip }}`{% endraw %} (the step needs an
+`id`).
 
 ## Tests
 
@@ -62,7 +73,8 @@ The order matters. `dns.py` needs the portal, which only exists until `join.py`
 has provisioned the device, so it runs first. `join.py` still runs if the DNS
 test fails, because the two do not depend on each other. The mDNS tests need
 the device on the Wi-Fi network, so they only run after a successful join. They
-do not depend on each other.
+do not depend on each other. The [Web tests] run last. They need the IP of the
+device, which `mdns_resolver.py` hands over.
 
 `mdns_normal.py` binds port 5353 before it connects, because the port is taken
 as soon as the client board is on the network.
@@ -98,3 +110,5 @@ Copy it to the board:
 ```bash
 uv run mpremote connect <port> cp wifi_credentials.py :wifi_credentials.py
 ```
+
+[Web tests]: {{ site.baseurl }}{% link pages/software/web_tests.md %}

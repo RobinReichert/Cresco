@@ -270,8 +270,14 @@ jobs:
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
         run: uv run python tests/mp_run.py tests/client/mdns_legacy.py
       - name: mDNS resolver
+        id: mdns_resolver
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
         run: uv run python tests/mp_run.py tests/client/mdns_resolver.py
       - name: mDNS normal query
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
         run: uv run python tests/mp_run.py tests/client/mdns_normal.py
+      - name: Web client check
+        if: ${{ !cancelled() && steps.mdns_resolver.outcome == 'success' }}
+        env:
+          CRESCO_IP: ${{ steps.mdns_resolver.outputs.ip }}
+        run: uv run python -m tests.web.tests "$CRESCO_IP" dashboard_integrity

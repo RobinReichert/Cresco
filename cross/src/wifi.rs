@@ -51,7 +51,7 @@ pub async fn start_wifi(
     let (ap_stack, ap_runner) = embassy_net::new(
         interfaces.ap,
         net_config,
-        mk_static!(StackResources<6>, StackResources::<6>::new()),
+        mk_static!(StackResources<4>, StackResources::<4>::new()),
         rng.random() as u64 | ((rng.random() as u64) << 32),
     );
 

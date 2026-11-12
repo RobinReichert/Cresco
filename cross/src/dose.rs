@@ -18,8 +18,8 @@ pub async fn dose_task(
     mut ph_down_pump: ConcreteStepper<'static>,
     fresh: &'static Signal<CriticalSectionRawMutex, u64>,
 ) {
-    let mut ec_pid_controller = PidController::new(1.0, 0.01, 1.0);
-    let mut ph_pid_controller = PidController::new(1.0, 0.01, 1.0);
+    let mut ec_pid_controller = PidController::new(1.0, 1.0, 1.0);
+    let mut ph_pid_controller = PidController::new(1.0, 1.0, 1.0);
     let mut next_period = Instant::now();
     loop {
         Timer::at(next_period).await;
@@ -28,12 +28,21 @@ pub async fn dose_task(
         let measurements = blackboard::snapshot().await;
         match (measurements.ec, measurements.ph) {
             (Some(ec), Some(ph)) => {
-                let ec_steps = ec_pid_controller.calculate(ec, 5.0, timestamp as usize) * RATE;
+                let ec_steps = ec_pid_controller.calculate(
+                    ec,
+                    5.0,
+                    (timestamp / PERIOD_LENGTH.as_millis()) as usize,
+                ) * RATE;
                 if ec_steps > THRESHOLD {
                     let _ = ec_pump.move_steps(ec_steps as isize).await;
                     let _ = ec_pump.release().await;
+                    ph_pid_controller.reset();
                 } else {
-                    let ph_steps = ph_pid_controller.calculate(ph, 5.0, timestamp as usize) * RATE;
+                    let ph_steps = ph_pid_controller.calculate(
+                        ph,
+                        5.0,
+                        (timestamp / PERIOD_LENGTH.as_millis()) as usize,
+                    ) * RATE;
                     if ph_steps.abs() > THRESHOLD {
                         if ph_steps > 0.0 {
                             let _ = ph_up_pump.move_steps(ph_steps.abs() as isize).await;

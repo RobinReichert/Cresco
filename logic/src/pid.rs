@@ -45,6 +45,10 @@ impl PidController {
         + self.ki * self.integral //integral
         + self.kd * derivative // derivative
     }
+
+    pub fn reset(&mut self) {
+        self.last_millis = 0;
+    }
 }
 
 #[cfg(test)]

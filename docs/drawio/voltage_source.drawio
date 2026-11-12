@@ -1,0 +1,132 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="voltage_source" id="voltage-source-1">
+    <mxGraphModel dx="1024" dy="640" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="client" value="Test client" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="40" y="40" width="150" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="client-gpio4" value="GPIO4 (pH)" parent="client" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="40" y="50" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="client-gnd" value="GND" parent="client" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="40" y="130" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="client-gpio3" value="GPIO3 (EC)" parent="client" vertex="1" style="text;html=1;align=right;fontColor=#333333;">
+          <mxGeometry x="40" y="210" width="100" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cresco" value="Cresco" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;">
+          <mxGeometry x="600" y="40" width="150" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="cresco-gpio0" value="GPIO0 (pH)" parent="cresco" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="50" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="cresco-gnd" value="GND" parent="cresco" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="130" width="100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="cresco-gpio1" value="GPIO1 (EC)" parent="cresco" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="10" y="210" width="100" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ph-r" value="" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;">
+          <mxGeometry x="260" y="90" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ph-r-label" value="10 kΩ" parent="1" vertex="1" style="text;html=1;align=center;fontColor=#333333;">
+          <mxGeometry x="260" y="62" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ph-in" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="100" as="sourcePoint" />
+            <mxPoint x="260" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ph-out" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="100" as="sourcePoint" />
+            <mxPoint x="600" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ph-node" value="" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="416" y="96" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="ph-c-wire-top" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="100" as="sourcePoint" />
+            <mxPoint x="420" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ph-c-plate-1" value="" parent="1" vertex="1" style="rounded=0;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="405" y="130" width="30" height="3" as="geometry" />
+        </mxCell>
+        <mxCell id="ph-c-plate-2" value="" parent="1" vertex="1" style="rounded=0;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="405" y="140" width="30" height="3" as="geometry" />
+        </mxCell>
+        <mxCell id="ph-c-wire-bottom" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="143" as="sourcePoint" />
+            <mxPoint x="420" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ph-c-label" value="1 µF" parent="1" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="445" y="126" width="50" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gnd-rail" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="180" as="sourcePoint" />
+            <mxPoint x="600" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gnd-node" value="" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="416" y="176" width="8" height="8" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ec-c-wire-top" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="180" as="sourcePoint" />
+            <mxPoint x="420" y="217" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ec-c-plate-1" value="" parent="1" vertex="1" style="rounded=0;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="405" y="217" width="30" height="3" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-c-plate-2" value="" parent="1" vertex="1" style="rounded=0;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="405" y="227" width="30" height="3" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-c-wire-bottom" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="230" as="sourcePoint" />
+            <mxPoint x="420" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ec-c-label" value="1 µF" parent="1" vertex="1" style="text;html=1;align=left;fontColor=#333333;">
+          <mxGeometry x="445" y="214" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-node" value="" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#333333;">
+          <mxGeometry x="416" y="256" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-in" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="260" as="sourcePoint" />
+            <mxPoint x="260" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ec-r" value="" parent="1" vertex="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;">
+          <mxGeometry x="260" y="250" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-r-label" value="10 kΩ" parent="1" vertex="1" style="text;html=1;align=center;fontColor=#333333;">
+          <mxGeometry x="260" y="222" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ec-out" parent="1" edge="1" style="endArrow=none;html=1;strokeColor=#333333;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="320" y="260" as="sourcePoint" />
+            <mxPoint x="600" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

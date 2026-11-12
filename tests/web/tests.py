@@ -2,44 +2,83 @@ import argparse
 from ipaddress import IPv4Address
 import sys
 import shutil
+import time
 from typing import Callable
 
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
 PAGE_LOAD_TIMEOUT = 30
+VOLTAGE_TIMEOUT = 10
 
 type TestFunc = Callable[[WebDriver, IPv4Address], None]
+
+
+def set_voltage(runner: Run, name: str, volts: float) -> None:
+    runner.send(f"set {name} {volts}")
+    deadline = time.monotonic() + VOLTAGE_TIMEOUT
+    while f"OK {name} {volts}" not in runner.output:
+        assert time.monotonic() < deadline, f"no confirmation for {name} {volts}"
+        time.sleep(0.05)
+
+
+def is_close(actual: float | str, expected: float, tolerance: float) -> bool:
+    value = float(actual)
+    return abs(value - expected) <= tolerance
 
 
 def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard = DashboardPage.open(driver, str(address))
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    ec = dashboard.get_ec()
+    assert ec == "Not calibrated", f"unexpected ec: {ec!r}"
+    ph = dashboard.get_ph()
+    assert ph == "Not calibrated", f"unexpected ph: {ph!r}"
     settings = dashboard.open_settings()
     dashboard = settings.close_settings()
     settings = dashboard.open_settings()
     calibrate_ec = settings.goto_calibrate_ec()
     title = calibrate_ec.get_title()
     assert title == "Cresco Calibration", f"unexpected title: {title!r}"
-    calibrate_ec.start()
-    calibrate_ec.submit_point(4.0)
-    calibrate_ec.submit_point(6.0)
-    dashboard = calibrate_ec.finish()
-    title = dashboard.get_title()
-    assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
-    settings = dashboard.open_settings()
-    calibrate_ph = settings.goto_calibrate_ph()
-    title = calibrate_ph.get_title()
-    assert title == "Cresco Calibration", f"unexpphted title: {title!r}"
-    calibrate_ph.start()
-    calibrate_ph.submit_point(1.0)
-    calibrate_ph.submit_point(2.0)
-    dashboard = calibrate_ph.finish()
-    title = dashboard.get_title()
-    assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    with run("tests/client/set_voltage.py") as runner:
+        calibrate_ec.start()
+        set_voltage(runner, "ec", 1.0)
+        calibrate_ec.submit_point(4.0)
+        set_voltage(runner, "ec", 3.0)
+        calibrate_ec.submit_point(6.0)
+        dashboard = calibrate_ec.finish()
+        title = dashboard.get_title()
+        assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+        settings = dashboard.open_settings()
+        calibrate_ph = settings.goto_calibrate_ph()
+        title = calibrate_ph.get_title()
+        assert title == "Cresco Calibration", f"unexpected title: {title!r}"
+        calibrate_ph.start()
+        set_voltage(runner, "ph", 0.5)
+        calibrate_ph.submit_point(1.0)
+        set_voltage(runner, "ph", 2.5)
+        calibrate_ph.submit_point(2.0)
+        dashboard = calibrate_ph.finish()
+        title = dashboard.get_title()
+        assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+        # the message is sent repeatedly so the script does not time out.
+        # the first measurement can take up to 60 seconds.
+        for _ in range(3):
+            time.sleep(20)
+            set_voltage(runner, "ec", 2.0)
+            set_voltage(runner, "ph", 1.5)
+        dashboard.refresh()
+        ec = dashboard.get_ec()
+        ph = dashboard.get_ph()
+        assert is_close(ec, 5.0, 0.2), f"unexpected ec of: {ec!r}, should be 5.0"
+        assert is_close(ph, 1.5, 0.2), f"unexpected ph of: {ph!r}, should be 1.5"
+        print(f"ec: {ec} is close to actual 5.0")
+        print(f"ph: {ph} is close to actual 1.5")
+    assert runner.passed, "set_voltage.py did not pass"
 
 
 TEST_FUNCTIONS: dict[str, TestFunc] = {"dashboard_integrity": dashboard_integrity_test}

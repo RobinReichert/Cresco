@@ -35,8 +35,9 @@ board.
 3. **Flash:** `tests/flash.py` runs `./cresco.sh flash app_embedded`, which
    downloads the firmware with `probe-rs` and resets the board.
 4. **Run the test:** `tests/mp_run.py` runs a script on the client board.
-5. **Check the dashboard:** a browser test opens the dashboard of the device,
-   see [Web tests].
+5. **Check the dashboard:** a browser test opens the dashboard of the device
+   and calibrates the sensors with voltages from the client board, see
+   [Web tests].
 
 ## Running a test script
 
@@ -44,11 +45,12 @@ board.
 uv run python tests/mp_run.py tests/client/join.py
 ```
 
-`tests/mp_run.py` runs `mpremote connect "$MP_PORT" run <script>` and prints the
-output as it arrives. `mpremote` does not return the exit code of the script,
-so the runner decides by the output. A test passes if the script prints a line
-that is exactly `PASS`. Anything else counts as a failure: a `FAIL` line, a
-traceback, a crash or no output.
+`tests/mp_run.py` soft-resets the board on `$MP_PORT`, runs the script with the
+`mpremote` library and prints the output as it arrives. The library does not
+return the exit code of the script, so the runner decides by the output.
+A test passes if the script prints a line that is exactly `PASS`.
+Anything else counts as a failure: a `FAIL` line, a traceback,
+a crash or no output.
 
 ## Passing values to later steps
 

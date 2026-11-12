@@ -53,7 +53,7 @@ impl Linear {
     }
 
     pub fn calibrate(&mut self, first: Point, second: Point) -> Result<(), ()> {
-        if second.x == first.x {
+        if second.x == first.x || second.y == first.y {
             return Err(());
         }
         let m = (second.y - first.y) / (second.x - first.x);
@@ -79,6 +79,14 @@ mod test {
     fn test_calibrate_same_x_errors() {
         let mut linear = Linear::new();
         let first = Point { x: 1.0, y: 0.0 };
+        let second = Point { x: 1.0, y: 5.0 };
+        assert_eq!(linear.calibrate(first, second), Err(()));
+    }
+
+    #[test]
+    fn test_calibrate_same_y_errors() {
+        let mut linear = Linear::new();
+        let first = Point { x: 0.5, y: 5.0 };
         let second = Point { x: 1.0, y: 5.0 };
         assert_eq!(linear.calibrate(first, second), Err(()));
     }

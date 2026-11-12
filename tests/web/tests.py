@@ -2,16 +2,27 @@ import argparse
 from ipaddress import IPv4Address
 import sys
 import shutil
+import time
 from typing import Callable
 
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
 PAGE_LOAD_TIMEOUT = 30
+VOLTAGE_TIMEOUT = 10
 
 type TestFunc = Callable[[WebDriver, IPv4Address], None]
+
+
+def set_voltage(runner: Run, name: str, volts: float) -> None:
+    runner.send(f"set {name} {volts}")
+    deadline = time.monotonic() + VOLTAGE_TIMEOUT
+    while f"OK {name} {volts}" not in runner.output:
+        assert time.monotonic() < deadline, f"no confirmation for {name} {volts}"
+        time.sleep(0.05)
 
 
 def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
@@ -24,8 +35,11 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     calibrate_ec = settings.goto_calibrate_ec()
     title = calibrate_ec.get_title()
     assert title == "Cresco Calibration", f"unexpected title: {title!r}"
+    runner = run("tests/client/set_voltage.py")
     calibrate_ec.start()
+    set_voltage(runner, "ec", 1.0)
     calibrate_ec.submit_point(4.0)
+    set_voltage(runner, "ec", 3.0)
     calibrate_ec.submit_point(6.0)
     dashboard = calibrate_ec.finish()
     title = dashboard.get_title()
@@ -33,10 +47,15 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     settings = dashboard.open_settings()
     calibrate_ph = settings.goto_calibrate_ph()
     title = calibrate_ph.get_title()
-    assert title == "Cresco Calibration", f"unexpphted title: {title!r}"
+    assert title == "Cresco Calibration", f"unexpected title: {title!r}"
     calibrate_ph.start()
+    set_voltage(runner, "ph", 0.5)
     calibrate_ph.submit_point(1.0)
+    set_voltage(runner, "ph", 2.5)
     calibrate_ph.submit_point(2.0)
+    runner.send("exit")
+    runner.wait()
+    assert runner.passed
     dashboard = calibrate_ph.finish()
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"

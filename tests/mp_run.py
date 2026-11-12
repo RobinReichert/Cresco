@@ -35,7 +35,7 @@ class Run:
         if byte != b"\n":
             self._line += byte
             return
-        line = self._line.decode(errors="replace")
+        line = self._line.decode(errors="replace").rstrip("\r")
         self._line = b""
         print(line, flush=True)
         self.output.append(line)

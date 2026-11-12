@@ -7,7 +7,7 @@ from machine import PWM, Pin
 TIMEOUT = 30
 PINS = {
     "ph": 4,
-    "ec": 5,
+    "ec": 3,
 }
 VCC = 3.3
 PWM_FREQ = 5000

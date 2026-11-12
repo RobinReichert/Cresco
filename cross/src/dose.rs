@@ -1,11 +1,11 @@
 use crate::blackboard;
-use crate::stepper::{Stepper, drv8833::Drv8833};
+use crate::stepper::{Stepper, dummy::Dummy};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use embassy_time::{Duration, Instant, Timer};
 use logic::Float;
 use logic::pid::PidController;
 
-pub type ConcreteStepper<'a> = Drv8833<'a>;
+pub type ConcreteStepper<'a> = Dummy<'a>;
 
 const PERIOD_LENGTH: Duration = Duration::from_secs(60);
 const THRESHOLD: Float = 1.0;

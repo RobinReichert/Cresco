@@ -137,3 +137,55 @@ pub mod drv8833 {
         }
     }
 }
+
+/// Stand-in driver without hardware: it only logs what it is asked to do.
+pub mod dummy {
+
+    use super::*;
+    use core::marker::PhantomData;
+
+    pub struct Dummy<'a> {
+        name: &'static str,
+        state: StepperState,
+        resolution: usize,
+        _lifetime: PhantomData<&'a ()>, // mirrors the pin lifetime of real drivers
+    }
+
+    impl<'a> Dummy<'a> {
+        pub fn new(name: &'static str, resolution: usize) -> Self {
+            Self {
+                name,
+                state: StepperState::Idle,
+                resolution,
+                _lifetime: PhantomData,
+            }
+        }
+    }
+
+    impl<'a> Stepper for Dummy<'a> {
+        type Error = ();
+
+        async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
+            defmt::info!("{}: move {} steps", self.name, steps);
+            Ok(())
+        }
+
+        async fn hold(&mut self) -> Result<(), Self::Error> {
+            self.state = StepperState::Holding;
+            Ok(())
+        }
+
+        async fn release(&mut self) -> Result<(), Self::Error> {
+            self.state = StepperState::Idle;
+            Ok(())
+        }
+
+        fn state(&self) -> StepperState {
+            self.state
+        }
+
+        fn resolution(&self) -> usize {
+            self.resolution
+        }
+    }
+}

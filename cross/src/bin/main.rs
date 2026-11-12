@@ -10,12 +10,13 @@
 use cross::{
     dhcp::dhcp_task,
     dns::{dns_task, mdns_task},
+    dose::dose_task,
     measurement::{MeasurementCommand, MeasurementStatus, StatusCell, measurement_task},
     mk_static,
     probe::AnalogProbe,
     shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
     shared_flash::{SharedFlash, SharedFlashInterface},
-    stepper::{Stepper, drv8833::Drv8833},
+    stepper::{Stepper, dummy::Dummy},
     storage::{CalibrationStorage, CredentialStorage},
     web::{
         self,
@@ -146,14 +147,15 @@ async fn main(spawner: Spawner) -> ! {
         spawner.must_spawn(web::cresco_web_task(task_id, sta_stack, cresco_app));
     }
 
-    let mut stepper = Drv8833::new(
-        peripherals.GPIO9,
-        peripherals.GPIO10,
-        peripherals.GPIO20,
-        peripherals.GPIO21,
-        200,
-    );
-    let _ = stepper.release().await;
+    // dummy pumps until the real driver exists
+    let mut ec_pump = Dummy::new("ec", 200);
+    let mut ph_up_pump = Dummy::new("ph up", 200);
+    let mut ph_down_pump = Dummy::new("ph down", 200);
+    let _ = ec_pump.release().await;
+    let _ = ph_up_pump.release().await;
+    let _ = ph_down_pump.release().await;
+
+    let fresh = mk_static!(Signal<CriticalSectionRawMutex, u64>, Signal::new());
 
     let mut adc_builder = AdcBuilder::new();
     let ph_pin = adc_builder.add_pin(peripherals.GPIO0);
@@ -169,11 +171,15 @@ async fn main(spawner: Spawner) -> ! {
             commands,
             status,
             calibration_storage,
+            fresh,
         ))
         .ok();
 
+    spawner
+        .spawn(dose_task(ec_pump, ph_up_pump, ph_down_pump, fresh))
+        .ok();
+
     loop {
-        let _ = stepper.move_steps(-2500).await;
-        Timer::after(Duration::from_secs(5)).await;
+        Timer::after(Duration::from_secs(3600)).await;
     }
 }

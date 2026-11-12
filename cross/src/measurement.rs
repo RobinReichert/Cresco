@@ -3,7 +3,9 @@ use crate::{shared_flash::SharedFlashInterface, storage::CalibrationStorage};
 use defmt::{info, panic};
 use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_futures::select::{Either, select};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex, signal::Signal,
+};
 use embassy_time::{Duration, Instant, Timer};
 use esp_hal::peripherals::{GPIO0, GPIO1};
 use esp_storage::FlashStorage;
@@ -50,6 +52,7 @@ pub async fn measurement_task(
     commands: &'static Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
     status: &'static StatusCell,
     mut calibration_storage: ConcreteCalibrationStorage<'static>,
+    fresh: &'static Signal<CriticalSectionRawMutex, u64>,
 ) {
     let ph = calibration_storage
         .get_ph_calibration()
@@ -95,6 +98,7 @@ pub async fn measurement_task(
             MeasurementAction::WriteMeasurements { ec, ph } => {
                 blackboard::set_ph(ph).await;
                 blackboard::set_ec(ec).await;
+                fresh.signal(Instant::now().as_millis());
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::ShowError { error } => {

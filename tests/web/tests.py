@@ -25,6 +25,11 @@ def set_voltage(runner: Run, name: str, volts: float) -> None:
         time.sleep(0.05)
 
 
+def is_close(actual: float | str, expected: float, tolerance: float) -> bool:
+    value = float(actual)
+    return abs(value - expected) <= tolerance
+
+
 def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard = DashboardPage.open(driver, str(address))
     title = dashboard.get_title()
@@ -60,14 +65,17 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard = calibrate_ph.finish()
     title = dashboard.get_title()
     assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
-    for _ in range(6):
+    for _ in range(
+        3
+    ):  # we need to send the message repeatedly so it does not timeout. the first measurement can take up to 60 seconds.
         time.sleep(20)
         set_voltage(runner, "ec", 2.0)
         set_voltage(runner, "ph", 1.5)
+    dashboard.refresh()
     ec = dashboard.get_ec()
-    print(f"ec: {ec}")
     ph = dashboard.get_ph()
-    print(f"ph: {ph}")
+    assert is_close(ec, 5.0, 0.1), f"unexpected ec of: {ec!r}, should have been 5.0"
+    assert is_close(ph, 1.5, 0.1), f"unexpected ph of: {ph!r}, should have been 1.5"
     runner.send("exit")
     runner.wait()
     assert runner.passed

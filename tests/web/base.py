@@ -44,5 +44,9 @@ class BasePage(Component):
         self.wait.until(lambda d: urlparse(d.current_url).path == path)
 
     @active
+    def refresh(self) -> None:
+        self.driver.refresh()
+
+    @active
     def get_title(self) -> str:
         return self.driver.title

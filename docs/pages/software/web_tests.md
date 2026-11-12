@@ -48,10 +48,50 @@ the import path, and `-m` takes care of that.
 
 `dashboard_integrity` goes through the dashboard like a user:
 
-1. Opens the dashboard and checks its title.
+1. Opens the dashboard, checks its title and checks that pH and EC read
+   `Not calibrated`. This only holds on a device without calibration, which CI
+   guarantees by erasing the device first.
 2. Opens and closes the settings drawer.
 3. Opens the EC calibration from the drawer, checks the page title and runs
-   the calibration with the reference values 4.0 and 6.0.
-4. Returns to the dashboard and does the same for pH with 1.0 and 2.0.
+   the calibration. The client board applies 1.0 V for the reference value 4.0
+   and 3.0 V for 6.0.
+4. Returns to the dashboard and does the same for pH: 0.5 V for 1.0 and 2.5 V
+   for 2.0.
+5. Applies 2.0 V to EC and 1.5 V to pH for one minute, reloads the dashboard
+   and checks that the values are close to the ones the calibration predicts:
+   EC 5.0 and pH 1.5, with a tolerance of 0.2. The first measurement after a
+   calibration can take up to 60 seconds, hence the wait.
+
+The test needs the client board, see [Voltage source]. It reads the serial port
+from `MP_PORT`, which the CI job sets. Locally, export it first:
+
+```bash
+export MP_PORT=<port>
+```
+
+## Voltage source
+
+A calibration needs two different readings per sensor. The test gets them from
+the client board of the [hardware tests], which applies a voltage to the ADC
+pins of the device. The ESP32-C3 has no DAC, so the client uses PWM and an RC
+low-pass filter to turn it into a steady voltage.
+
+![Image]({{site.baseurl}}/assets/drawio/voltage_source.svg)
+
+| Client | Cresco | Signal |
+| --- | --- | --- |
+| `GPIO4` | `GPIO0` | pH, through 10 kΩ and 1 µF |
+| `GPIO3` | `GPIO1` | EC, through 10 kΩ and 1 µF |
+| `GND` | `GND` | Common ground |
+
+The resistor sits in series with the signal, the capacitor between the Cresco
+pin and ground. The grounds of both boards must be connected, otherwise the
+voltage has no reference.
+
+The filter has a time constant of 10 ms (10 kΩ × 1 µF). The PWM runs at
+5 kHz, far above the cut-off frequency of about 16 Hz, so little ripple is left
+on the output. The voltage settles within about 50 ms, and the script waits
+0.5 s after every change to be safe.
 
 [hardware tests]: {{ site.baseurl }}{% link pages/software/hardware_tests.md %}
+[Voltage source]: #voltage-source

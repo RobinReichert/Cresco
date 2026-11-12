@@ -35,8 +35,9 @@ board.
 3. **Flash:** `tests/flash.py` runs `./cresco.sh flash app_embedded`, which
    downloads the firmware with `probe-rs` and resets the board.
 4. **Run the test:** `tests/mp_run.py` runs a script on the client board.
-5. **Check the dashboard:** a browser test opens the dashboard of the device,
-   see [Web tests].
+5. **Check the dashboard:** a browser test opens the dashboard of the device
+   and calibrates the sensors with voltages from the client board, see
+   [Web tests].
 
 ## Running a test script
 

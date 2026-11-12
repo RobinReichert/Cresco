@@ -26,10 +26,12 @@ class Run:
 
     def _follow(self) -> None:
         _, error = self._transport.follow(timeout=None, data_consumer=self._feed)
-        for byte in error + b"\n":
+        for byte in error + b"\n" if error else b"":
             self._feed(bytes([byte]))
 
     def _feed(self, byte: bytes) -> None:
+        if byte == b"\x04":  # end-of-output marker of the raw REPL
+            return
         if byte != b"\n":
             self._line += byte
             return

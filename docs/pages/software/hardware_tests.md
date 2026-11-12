@@ -44,11 +44,12 @@ board.
 uv run python tests/mp_run.py tests/client/join.py
 ```
 
-`tests/mp_run.py` runs `mpremote connect "$MP_PORT" run <script>` and prints the
-output as it arrives. `mpremote` does not return the exit code of the script,
-so the runner decides by the output. A test passes if the script prints a line
-that is exactly `PASS`. Anything else counts as a failure: a `FAIL` line, a
-traceback, a crash or no output.
+`tests/mp_run.py` soft-resets the board on `$MP_PORT`, runs the script with the
+`mpremote` library and prints the output as it arrives. The library does not
+return the exit code of the script, so the runner decides by the output.
+A test passes if the script prints a line that is exactly `PASS`.
+Anything else counts as a failure: a `FAIL` line, a traceback,
+a crash or no output.
 
 ## Passing values to later steps
 

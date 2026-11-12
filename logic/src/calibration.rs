@@ -84,6 +84,14 @@ mod test {
     }
 
     #[test]
+    fn test_calibrate_same_y_errors() {
+        let mut linear = Linear::new();
+        let first = Point { x: 0.5, y: 5.0 };
+        let second = Point { x: 1.0, y: 5.0 };
+        assert_eq!(linear.calibrate(first, second), Err(()));
+    }
+
+    #[test]
     fn test_apply_before_calibrate_errors() {
         let linear = Linear::new();
         assert_eq!(linear.apply(1.0), Err(()));

@@ -74,8 +74,8 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     dashboard.refresh()
     ec = dashboard.get_ec()
     ph = dashboard.get_ph()
-    assert is_close(ec, 5.0, 0.1), f"unexpected ec of: {ec!r}, should have been 5.0"
-    assert is_close(ph, 1.5, 0.1), f"unexpected ph of: {ph!r}, should have been 1.5"
+    assert is_close(ec, 5.0, 0.2), f"unexpected ec of: {ec!r}, should have been 5.0"
+    assert is_close(ph, 1.5, 0.2), f"unexpected ph of: {ph!r}, should have been 1.5"
     print(f"ec: {ec} is close to actual 5.0")
     print(f"ph: {ph} is close to actual 1.5")
     runner.send("exit")

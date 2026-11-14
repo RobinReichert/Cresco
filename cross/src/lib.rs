@@ -4,6 +4,7 @@
 pub mod blackboard;
 pub mod dhcp;
 pub mod dns;
+pub mod dose;
 pub mod measurement;
 pub mod partitions;
 pub mod probe;

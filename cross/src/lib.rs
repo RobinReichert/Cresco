@@ -9,7 +9,6 @@ pub mod measurement;
 pub mod partitions;
 pub mod probe;
 pub mod shared_adc;
-pub mod shared_flash;
 pub mod stepper;
 pub mod storage;
 pub mod web;

@@ -15,9 +15,8 @@ use cross::{
     mk_static,
     probe::AnalogProbe,
     shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
-    shared_flash::{SharedFlash, SharedFlashInterface},
     stepper::{Stepper, dummy::Dummy},
-    storage::{CalibrationStorage, CredentialStorage},
+    storage::{ConcreteStorage, Storage},
     web::{
         self,
         captive_app::CaptiveApp,
@@ -87,15 +86,8 @@ async fn main(spawner: Spawner) -> ! {
 
     let flash_blocking = FlashStorage::new(peripherals.FLASH);
     let flash_async = BlockingAsync::new(flash_blocking);
-    let shared_flash = SharedFlash::new(flash_async);
-    let shared_flash = mk_static!(
-        SharedFlash<BlockingAsync<esp_storage::FlashStorage>>,
-        shared_flash
-    );
-    let credential_storage =
-        CredentialStorage::new(SharedFlashInterface::new(shared_flash), NoCache::new());
-    let calibration_storage =
-        CalibrationStorage::new(SharedFlashInterface::new(shared_flash), NoCache::new());
+    let storage: &'static _ =
+        mk_static!(ConcreteStorage, Storage::new(flash_async, NoCache::new()));
 
     let ssids: Mutex<CriticalSectionRawMutex, SsidsList> = Mutex::new(Vec::new());
     let ssids: &'static _ = mk_static!(Mutex<CriticalSectionRawMutex, SsidsList>, ssids);
@@ -104,12 +96,7 @@ async fn main(spawner: Spawner) -> ! {
         mk_static!(Signal<CriticalSectionRawMutex, LoginData>, credentials);
 
     spawner
-        .spawn(connection(
-            wifi_controller,
-            &ssids,
-            &credentials,
-            credential_storage,
-        ))
+        .spawn(connection(wifi_controller, &ssids, &credentials, storage))
         .ok();
 
     spawner.spawn(dhcp_task(ap_stack)).ok();
@@ -166,12 +153,7 @@ async fn main(spawner: Spawner) -> ! {
 
     spawner
         .spawn(measurement_task(
-            ph_probe,
-            ec_probe,
-            commands,
-            status,
-            calibration_storage,
-            fresh,
+            ph_probe, ec_probe, commands, status, storage, fresh,
         ))
         .ok();
 

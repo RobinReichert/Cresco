@@ -69,14 +69,14 @@ pub async fn measurement_task(
                     info!("could not store the ec calibration");
                 }
                 *status.lock().await = MeasurementStatus::CalibrationSucceeded;
-                event = Some(next_trigger(commands).await);
+                event = Some(MeasurementEvent::CalibrationStored);
             }
             MeasurementAction::StorePhCalibration { calibration } => {
                 if !storage.set_ph_calibration(calibration).await {
                     info!("could not store the ph calibration");
                 }
                 *status.lock().await = MeasurementStatus::CalibrationSucceeded;
-                event = Some(next_trigger(commands).await);
+                event = Some(MeasurementEvent::CalibrationStored);
             }
             MeasurementAction::MeasureEc => {
                 event = Some(match ec_probe.read().await {

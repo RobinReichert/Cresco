@@ -17,6 +17,7 @@ pub enum MeasurementState {
 pub enum MeasurementEvent {
     Start,
     StartMeasurement,
+    CalibrationStored,
     StartEcCalibration,
     StartPhCalibration,
     FirstMeasured { first: Float, actual_first: Float },
@@ -76,14 +77,31 @@ impl MeasurementManager {
         }
     }
 
+    fn is_fully_calibrated(&self) -> bool {
+        self.ec_calibration.is_calibrated() && self.ph_calibration.is_calibrated()
+    }
+
     pub fn handle_event(&mut self, event: MeasurementEvent) -> MeasurementAction {
         match (&self.state, event) {
             (MeasurementState::Start, MeasurementEvent::Start) => {
-                self.state = MeasurementState::Idle;
-                MeasurementAction::WaitForNext
+                if self.is_fully_calibrated() {
+                    self.state = MeasurementState::MeasuringEc;
+                    MeasurementAction::MeasureEc
+                } else {
+                    self.state = MeasurementState::Idle;
+                    MeasurementAction::WaitForNext
+                }
+            }
+            (MeasurementState::Idle, MeasurementEvent::CalibrationStored) => {
+                if self.is_fully_calibrated() {
+                    self.state = MeasurementState::MeasuringEc;
+                    MeasurementAction::MeasureEc
+                } else {
+                    MeasurementAction::WaitForNext
+                }
             }
             (MeasurementState::Idle, MeasurementEvent::StartMeasurement) => {
-                if self.ec_calibration.is_calibrated() && self.ph_calibration.is_calibrated() {
+                if self.is_fully_calibrated() {
                     self.state = MeasurementState::MeasuringEc;
                     MeasurementAction::MeasureEc
                 } else {
@@ -306,6 +324,64 @@ mod test {
     #[test]
     fn test_start_transitions_to_idle_and_waits() {
         started_manager();
+    }
+
+    fn ec_calibration() -> calibration::Linear {
+        linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 })
+    }
+
+    fn ph_calibration() -> calibration::Linear {
+        linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 })
+    }
+
+    #[test]
+    fn test_start_when_calibrated_measures_ec_immediately() {
+        let mut manager = MeasurementManager::with_calibrations(ec_calibration(), ph_calibration());
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Start),
+            MeasurementAction::MeasureEc
+        );
+    }
+
+    #[test]
+    fn test_start_when_only_one_sensor_calibrated_waits() {
+        let mut manager =
+            MeasurementManager::with_calibrations(ec_calibration(), calibration::Linear::new());
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Start),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_calibration_stored_with_one_sensor_calibrated_waits() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 0.0,
+        });
+        manager.handle_event(MeasurementEvent::SecondMeasured {
+            second: 10.0,
+            actual_second: 100.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::CalibrationStored),
+            MeasurementAction::WaitForNext
+        );
+    }
+
+    #[test]
+    fn test_calibration_stored_with_both_sensors_calibrated_measures_ec() {
+        let mut manager = calibrated_manager();
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::CalibrationStored),
+            MeasurementAction::MeasureEc
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::EcMeasured { ec: 5.0 }),
+            MeasurementAction::MeasurePh
+        );
     }
 
     #[test]

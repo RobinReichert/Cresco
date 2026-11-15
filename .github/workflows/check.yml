@@ -261,21 +261,21 @@ jobs:
       - name: Flash
         run: uv run python tests/flash.py
       - name: DNS
-        run: uv run python tests/mp_run.py tests/client/dns.py
+        run: uv run python -m tests.tests dns
       - name: Join
         id: join
         if: ${{ !cancelled() }}
-        run: uv run python tests/mp_run.py tests/client/join.py
+        run: uv run python -m tests.tests join
       - name: mDNS legacy query
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
-        run: uv run python tests/mp_run.py tests/client/mdns_legacy.py
+        run: uv run python -m tests.tests mdns_legacy
       - name: mDNS resolver
         id: mdns_resolver
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
-        run: uv run python tests/mp_run.py tests/client/mdns_resolver.py
+        run: uv run python -m tests.tests mdns_resolver
       - name: mDNS normal query
         if: ${{ !cancelled() && steps.join.outcome == 'success' }}
-        run: uv run python tests/mp_run.py tests/client/mdns_normal.py
+        run: uv run python -m tests.tests mdns_normal
       - name: Web client check
         if: ${{ !cancelled() && steps.mdns_resolver.outcome == 'success' }}
         env:

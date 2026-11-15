@@ -9,6 +9,7 @@ from typing import Callable
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from tests import mp_run
 from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
@@ -120,8 +121,33 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     assert runner.passed, "set_voltage.py did not pass"
 
 
+def mdns_normal_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_normal.py").wait()
+
+
+def mdns_resolver_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_resolver.py").wait()
+
+
+def mdns_legacy_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_legacy.py").wait()
+
+
+def join_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/join.py").wait()
+
+
+def dns_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/dns.py").wait()
+
+
 TEST_FUNCTIONS: dict[str, Test] = {
-    "dashboard_integrity": Test(run_web(dashboard_integrity_test), web_args)
+    "dashboard_integrity": Test(run_web(dashboard_integrity_test), web_args),
+    "mdns_normal": Test(mdns_normal_test),
+    "mdns_resolver": Test(mdns_resolver_test),
+    "mdns_legacy": Test(mdns_legacy_test),
+    "join": Test(join_test),
+    "dns": Test(dns_test),
 }
 
 

@@ -120,7 +120,7 @@
             <mxPoint x="-10" y="270" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="9O4fe4uH-V5Yyk7zLQEI-21" edge="1" parent="1" source="9O4fe4uH-V5Yyk7zLQEI-7" style="endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="9O4fe4uH-V5Yyk7zLQEI-2" value="ec &amp;amp; ph calibrated | periodic">
+        <mxCell id="9O4fe4uH-V5Yyk7zLQEI-21" edge="1" parent="1" source="9O4fe4uH-V5Yyk7zLQEI-7" style="endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="9O4fe4uH-V5Yyk7zLQEI-2" value="ec &amp;amp; ph calibrated | periodic | calibration stored">
           <mxGeometry height="50" relative="1" width="50" x="0.3333" y="45" as="geometry">
             <mxPoint as="offset" />
             <mxPoint x="185" y="160" as="sourcePoint" />
@@ -133,6 +133,13 @@
         <mxCell id="9O4fe4uH-V5Yyk7zLQEI-26" edge="1" parent="1" source="9O4fe4uH-V5Yyk7zLQEI-25" style="html=1;verticalAlign=bottom;endArrow=open;endSize=8;strokeColor=#ff0000;rounded=0;entryX=0;entryY=0;entryDx=0;entryDy=0;" target="9O4fe4uH-V5Yyk7zLQEI-7" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="25" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9O4fe4uH-V5Yyk7zLQEI-39" edge="1" parent="1" source="9O4fe4uH-V5Yyk7zLQEI-25" style="html=1;verticalAlign=bottom;endArrow=open;endSize=8;strokeColor=#ff0000;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;" target="9O4fe4uH-V5Yyk7zLQEI-2" value="ec &amp;amp; ph calibrated">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-25" y="180" />
+            </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="9O4fe4uH-V5Yyk7zLQEI-27" edge="1" parent="1" source="9O4fe4uH-V5Yyk7zLQEI-6" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" target="9O4fe4uH-V5Yyk7zLQEI-7" value="abort">

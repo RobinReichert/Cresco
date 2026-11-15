@@ -37,8 +37,9 @@ the *driver* that carries it out.
 
 | Variant | When to fire |
 | --- | --- |
-| `Start` | Once, at boot |
+| `Start` | Once, at boot; measures immediately if both sensors are calibrated |
 | `StartMeasurement` | The periodic timer elapsed |
+| `CalibrationStored` | A new calibration was stored |
 | `Start(Ec/Ph)Calibration` | User requested a calibration |
 | `FirstMeasured` / `SecondMeasured` | Probe was read for a calibration point |
 | `(Ec/Ph)Measured` | Routine measurement of that sensor completed |
@@ -63,6 +64,11 @@ measurement cycle only runs once **both** are calibrated — `Idle` +
 `StartMeasurement` checks `is_calibrated()` on each before proceeding to
 `MeasuringEc`; until then it returns `ShowError { error: NotCalibratedYet }`
 and stays in `Idle`.
+
+Measuring does not wait for the periodic timer in two cases: at boot, when
+both calibrations were loaded from storage (`Start`), and right after a
+calibration is stored (`CalibrationStored`), provided the other sensor is
+already calibrated too.
 
 `FirstMeasured`/`SecondMeasured` carry both the raw probe reading and the
 actual reference value the user provided (e.g. the pH of a buffer solution),

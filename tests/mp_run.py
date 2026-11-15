@@ -43,7 +43,7 @@ class Run:
             return
         line = self._line.decode(errors="replace").rstrip("\r")
         self._line = b""
-        print(line, flush=True)
+        print(f"CLIENT: {line}", flush=True)
         self.output.append(line)
         self.passed = self.passed or line.strip() == "PASS"
         output_file = os.environ.get("GITHUB_OUTPUT")

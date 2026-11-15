@@ -161,6 +161,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    err = main()
-    print("FAIL" if err else "PASS")
-    sys.exit(err)
+    sys.exit(main())

@@ -34,19 +34,21 @@ board.
    run starts from a clean device.
 3. **Flash:** `tests/flash.py` runs `./cresco.sh flash app_embedded`, which
    downloads the firmware with `probe-rs` and resets the board.
-4. **Run the test:** `tests/mp_run.py` runs a script on the client board.
+4. **Run the test:** `tests/tests.py` runs a test by name. A client test
+   runs its script on the client board with `run()` from `tests/mp_run.py`.
 5. **Check the dashboard:** a browser test opens the dashboard of the device
    and calibrates the sensors with voltages from the client board, see
    [Web tests].
 
-## Running a test script
+## Running a test
 
 ```bash
-uv run python tests/mp_run.py tests/client/join.py
+uv run python -m tests.tests join
 ```
 
-`tests/mp_run.py` soft-resets the board on `$MP_PORT`, runs the script with the
-`mpremote` library and prints the output as it arrives. The library does not
+`run()` in `tests/mp_run.py` soft-resets the board on `$MP_PORT`, runs the
+script with the `mpremote` library and prints the output as it arrives.
+The library does not
 return the exit code of the script, so the runner decides by the output.
 A test passes if the script prints a line that is exactly `PASS`.
 Anything else counts as a failure: a `FAIL` line, a traceback,
@@ -80,6 +82,37 @@ device, which `mdns_resolver.py` hands over.
 
 `mdns_normal.py` binds port 5353 before it connects, because the port is taken
 as soon as the client board is on the network.
+
+## Adding a test
+
+**Client test:**
+
+1. Write the script in `tests/client/` and make it print `PASS` or `FAIL` at
+   the end, like the existing ones.
+2. In `tests/tests.py`, add a function that runs it and register it:
+
+   ```python
+   def my_test(args: argparse.Namespace) -> int:
+       return run("tests/client/my_test.py").wait()
+
+   TEST_FUNCTIONS = {
+       ...
+       "my_test": Test(my_test),
+   }
+   ```
+
+3. Add a step to the `test-hw` job that runs
+   `uv run python -m tests.tests my_test`.
+
+**Web test:** write a function `(driver, address)` that raises on failure and
+register it with `Test(run_web(my_web_test), web_args)`. `run_web` creates the
+browser and `web_args` adds the `ip` and `--headed` arguments, see
+[Web tests].
+
+**Extra arguments:** the second field of `Test` is a function that adds
+arguments to the subparser of that test. Write one like `web_args` and read the
+values from `args` in the test function. Tests without extra arguments need
+none.
 
 ## Setup
 

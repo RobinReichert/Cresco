@@ -18,27 +18,27 @@ step of the [hardware tests] and can be run locally against any device.
 Run it from the repository root, as a module:
 
 ```bash
-uv run python -m tests.web.tests <ip> <test name> [--headed]
+uv run python -m tests.tests <test name> <ip> [--headed]
 ```
 
 | Argument | Meaning |
 | --- | --- |
+| `test name` | A key of `TEST_FUNCTIONS` in `tests/tests.py` |
 | `ip` | Address of the device |
-| `test name` | A key of `TEST_FUNCTIONS` in `tests/web/tests.py` |
 | `--headed` | Show the browser window, by default it runs headless |
 
 For example:
 
 ```bash
-uv run python -m tests.web.tests 192.168.1.50 dashboard_integrity --headed
+uv run python -m tests.tests dashboard_integrity 192.168.1.50 --headed
 ```
 
 The runner prints `PASS` or `FAIL` and exits with 0 or 1. If a test fails, the
 message of the error is printed before `FAIL`.
 
-Do not run the file as a script (`python tests/web/tests.py`). The tests import
-each other as `tests.web...`, which only works when the repository root is on
-the import path, and `-m` takes care of that.
+Do not run the file as a script (`python tests/tests.py`). It imports the
+other test modules as `tests...`, which only works when the repository root is
+on the import path, and `-m` takes care of that.
 
 ## Tests
 

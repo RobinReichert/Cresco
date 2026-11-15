@@ -1,5 +1,6 @@
 import argparse
 from ipaddress import IPv4Address
+from dataclasses import dataclass
 import sys
 import shutil
 import time
@@ -8,13 +9,52 @@ from typing import Callable
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from tests import mp_run
 from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
 PAGE_LOAD_TIMEOUT = 30
 VOLTAGE_TIMEOUT = 10
 
-type TestFunc = Callable[[WebDriver, IPv4Address], None]
+
+def no_args(parser: argparse.ArgumentParser) -> None:
+    pass
+
+
+def web_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("ip", help="IP address of the device")
+    parser.add_argument("--headed", action="store_true", help="show the browser window")
+
+
+def run_web(
+    test: Callable[[WebDriver, IPv4Address], None],
+) -> Callable[[argparse.Namespace], int]:
+    def run_test(args: argparse.Namespace) -> int:
+        options = webdriver.ChromeOptions()
+        chromium = shutil.which("chromium")
+        if chromium:
+            options.binary_location = chromium
+        if not args.headed:
+            options.add_argument("--headless=new")
+        options.page_load_strategy = "eager"
+        driver = webdriver.Chrome(options=options)
+        driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
+        try:
+            test(driver, args.ip)
+            return 0
+        except Exception as e:
+            print(e)
+            return 1
+        finally:
+            driver.quit()
+
+    return run_test
+
+
+@dataclass
+class Test:
+    run: Callable[[argparse.Namespace], int]
+    args: Callable[[argparse.ArgumentParser], None] = no_args
 
 
 def set_voltage(runner: Run, name: str, volts: float) -> None:
@@ -81,35 +121,44 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     assert runner.passed, "set_voltage.py did not pass"
 
 
-TEST_FUNCTIONS: dict[str, TestFunc] = {"dashboard_integrity": dashboard_integrity_test}
+def mdns_normal_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_normal.py").wait()
+
+
+def mdns_resolver_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_resolver.py").wait()
+
+
+def mdns_legacy_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/mdns_legacy.py").wait()
+
+
+def join_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/join.py").wait()
+
+
+def dns_test(args: argparse.Namespace) -> int:
+    return mp_run.run("tests/client/dns.py").wait()
+
+
+TEST_FUNCTIONS: dict[str, Test] = {
+    "dashboard_integrity": Test(run_web(dashboard_integrity_test), web_args),
+    "mdns_normal": Test(mdns_normal_test),
+    "mdns_resolver": Test(mdns_resolver_test),
+    "mdns_legacy": Test(mdns_legacy_test),
+    "join": Test(join_test),
+    "dns": Test(dns_test),
+}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("ip", help="IP address of the device")
-    parser.add_argument("test_name", help="Name of the test to be run")
-    parser.add_argument("--headed", action="store_true", help="show the browser window")
+    sub = parser.add_subparsers(dest="test_name", required=True)
+    for name, test in TEST_FUNCTIONS.items():
+        test.args(sub.add_parser(name))
     args = parser.parse_args()
-    options = webdriver.ChromeOptions()
-    chromium = shutil.which("chromium")
-    if chromium:
-        options.binary_location = chromium
-    if not args.headed:
-        options.add_argument("--headless=new")
-    options.page_load_strategy = "eager"
-    driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
-    try:
-        TEST_FUNCTIONS[args.test_name](driver, args.ip)
-        return 0
-    except Exception as e:
-        print(e)
-    finally:
-        driver.quit()
-    return 1
+    return TEST_FUNCTIONS[args.test_name].run(args)
 
 
 if __name__ == "__main__":
-    err = main()
-    print("FAIL" if err else "PASS")
-    sys.exit(err)
+    sys.exit(main())

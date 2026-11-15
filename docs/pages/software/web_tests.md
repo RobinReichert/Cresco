@@ -45,6 +45,7 @@ on the import path, and `-m` takes care of that.
 | Test | What it checks |
 | --- | --- |
 | `dashboard_integrity` | The pages load and the calibration flow works |
+| `storage` | The calibration and Wi-Fi credentials survive a reset |
 
 `dashboard_integrity` goes through the dashboard like a user:
 
@@ -68,6 +69,21 @@ from `MP_PORT`, which the CI job sets. Locally, export it first:
 ```bash
 export MP_PORT=<port>
 ```
+
+`storage` checks that the device keeps its data across a reset. It has to run
+after `dashboard_integrity`, which leaves the device calibrated, and CI only
+runs it if that test passed.
+
+1. Resets the device with `probe-rs reset --chip esp32c3`. The flash is not
+   erased, so stored data stays. With several probes attached, select one with
+   `PROBE_RS_PROBE`.
+2. Waits 65 seconds for the first measurement.
+3. Runs `tests/client/mdns_resolver.py` on the client board, which fails if the
+   device did not rejoin the Wi-Fi network from its stored credentials.
+4. Opens the dashboard and checks that EC and pH are no longer
+   `Not calibrated`. It does not check the values.
+
+Like `dashboard_integrity`, it needs `MP_PORT`.
 
 ## Voltage source
 

@@ -1,5 +1,4 @@
 import os
-import sys
 import threading
 
 from mpremote.transport_serial import SerialTransport
@@ -26,10 +25,10 @@ class Run:
     def send(self, message: str) -> None:
         self._transport.serial.write(message.encode() + b"\n")
 
-    def wait(self) -> bool:
+    def wait(self) -> int:
         self._thread.join()
         self._transport.close()
-        return self.passed
+        return not self.passed
 
     def _follow(self) -> None:
         _, error = self._transport.follow(timeout=None, data_consumer=self._feed)
@@ -44,7 +43,7 @@ class Run:
             return
         line = self._line.decode(errors="replace").rstrip("\r")
         self._line = b""
-        print(line, flush=True)
+        print(f"CLIENT: {line}", flush=True)
         self.output.append(line)
         self.passed = self.passed or line.strip() == "PASS"
         output_file = os.environ.get("GITHUB_OUTPUT")
@@ -56,7 +55,3 @@ class Run:
 def run(script_path: str) -> Run:
     with open(script_path, "rb") as f:
         return Run(os.environ["MP_PORT"], f.read())
-
-
-if __name__ == "__main__":
-    sys.exit(0 if run(sys.argv[1]).wait() else 1)

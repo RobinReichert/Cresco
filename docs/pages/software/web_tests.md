@@ -18,33 +18,34 @@ step of the [hardware tests] and can be run locally against any device.
 Run it from the repository root, as a module:
 
 ```bash
-uv run python -m tests.web.tests <ip> <test name> [--headed]
+uv run python -m tests.tests <test name> <ip> [--headed]
 ```
 
 | Argument | Meaning |
 | --- | --- |
+| `test name` | A key of `TEST_FUNCTIONS` in `tests/tests.py` |
 | `ip` | Address of the device |
-| `test name` | A key of `TEST_FUNCTIONS` in `tests/web/tests.py` |
 | `--headed` | Show the browser window, by default it runs headless |
 
 For example:
 
 ```bash
-uv run python -m tests.web.tests 192.168.1.50 dashboard_integrity --headed
+uv run python -m tests.tests dashboard_integrity 192.168.1.50 --headed
 ```
 
 The runner prints `PASS` or `FAIL` and exits with 0 or 1. If a test fails, the
 message of the error is printed before `FAIL`.
 
-Do not run the file as a script (`python tests/web/tests.py`). The tests import
-each other as `tests.web...`, which only works when the repository root is on
-the import path, and `-m` takes care of that.
+Do not run the file as a script (`python tests/tests.py`). It imports the
+other test modules as `tests...`, which only works when the repository root is
+on the import path, and `-m` takes care of that.
 
 ## Tests
 
 | Test | What it checks |
 | --- | --- |
 | `dashboard_integrity` | The pages load and the calibration flow works |
+| `storage` | The calibration and Wi-Fi credentials survive a reset |
 
 `dashboard_integrity` goes through the dashboard like a user:
 
@@ -68,6 +69,21 @@ from `MP_PORT`, which the CI job sets. Locally, export it first:
 ```bash
 export MP_PORT=<port>
 ```
+
+`storage` checks that the device keeps its data across a reset. It has to run
+after `dashboard_integrity`, which leaves the device calibrated, and CI only
+runs it if that test passed.
+
+1. Resets the device with `probe-rs reset --chip esp32c3`. The flash is not
+   erased, so stored data stays. With several probes attached, select one with
+   `PROBE_RS_PROBE`.
+2. Waits 65 seconds for the first measurement.
+3. Runs `tests/client/mdns_resolver.py` on the client board, which fails if the
+   device did not rejoin the Wi-Fi network from its stored credentials.
+4. Opens the dashboard and checks that EC and pH are no longer
+   `Not calibrated`. It does not check the values.
+
+Like `dashboard_integrity`, it needs `MP_PORT`.
 
 ## Voltage source
 

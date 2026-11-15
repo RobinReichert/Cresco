@@ -5,6 +5,7 @@ import sys
 import shutil
 import time
 from typing import Callable
+import subprocess
 
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -68,6 +69,21 @@ def set_voltage(runner: Run, name: str, volts: float) -> None:
 def is_close(actual: float | str, expected: float, tolerance: float) -> bool:
     value = float(actual)
     return abs(value - expected) <= tolerance
+
+
+def storage_test(driver: WebDriver, address: IPv4Address) -> None:
+    subprocess.run(["probe-rs", "reset", "--chip", "esp32c3"], check=True)
+    time.sleep(5)
+    assert mp_run.run("tests/client/mdns_resolver.py").wait() == 0, (
+        "cresco did not rejoin network after reset"
+    )
+    dashboard = DashboardPage.open(driver, str(address))
+    title = dashboard.get_title()
+    assert title == "Cresco Dashboard", f"unexpected title: {title!r}"
+    ec = dashboard.get_ec()
+    assert ec != "Not calibrated", f"unexpected ec: {ec!r}"
+    ph = dashboard.get_ph()
+    assert ph != "Not calibrated", f"unexpected ph: {ph!r}"
 
 
 def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
@@ -142,6 +158,7 @@ def dns_test(args: argparse.Namespace) -> int:
 
 
 TEST_FUNCTIONS: dict[str, Test] = {
+    "storage": Test(run_web(storage_test), web_args),
     "dashboard_integrity": Test(run_web(dashboard_integrity_test), web_args),
     "mdns_normal": Test(mdns_normal_test),
     "mdns_resolver": Test(mdns_resolver_test),

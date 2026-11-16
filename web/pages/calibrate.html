@@ -49,6 +49,7 @@
     ];
     let step = 0;
     let busy = false;
+    let finished = false;
 
     async function post(path, params = {}) {
         const response = await fetch(path, { method: 'POST', body: new URLSearchParams(params) });
@@ -115,10 +116,21 @@
     }
 
     document.getElementById('next').addEventListener('click', async () => {
-        if (step === steps.length - 1) { location.href = '/'; return; }
         showError('');
         busy = true;
         render();
+        if (step === steps.length - 1) {
+            try {
+                await post('/api/calibration/finish');
+                finished = true;
+                location.href = '/';
+            } catch (e) {
+                showError(e instanceof TypeError ? 'Could not reach the device.' : e.message);
+                busy = false;
+                render();
+            }
+            return;
+        }
         try {
             await actions[step]();
             step += 1;
@@ -131,9 +143,9 @@
         render();
     });
 
-    // Leaving mid-calibration (cancel, back, reload, closing the tab) would leave the device waiting for a point.
+    // Leaving before the calibration is finished (cancel, back, reload, closing the tab) would leave the device waiting for a point or for the finish.
     addEventListener('pagehide', () => {
-        if (busy || step === 1 || step === 2) navigator.sendBeacon('/api/calibration/abort');
+        if (!finished && (busy || step > 0)) navigator.sendBeacon('/api/calibration/abort');
     });
     render();
     </script>

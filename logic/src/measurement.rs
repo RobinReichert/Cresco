@@ -12,12 +12,15 @@ pub enum MeasurementState {
     CalibratingEcSecond { first: Float, actual_first: Float },
     CalibratingPhFirst,
     CalibratingPhSecond { first: Float, actual_first: Float },
+    FinishingEc { calibration: calibration::Linear },
+    FinishingPh { calibration: calibration::Linear },
 }
 
 pub enum MeasurementEvent {
     Start,
     StartMeasurement,
     CalibrationStored,
+    FinishCalibration,
     StartEcCalibration,
     StartPhCalibration,
     FirstMeasured { first: Float, actual_first: Float },
@@ -46,6 +49,7 @@ pub enum MeasurementAction {
     RetrievePhSecond,
     StoreEcCalibration { calibration: calibration::Linear },
     StorePhCalibration { calibration: calibration::Linear },
+    WaitForFinish,
     WaitForNext,
 }
 
@@ -171,8 +175,8 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                self.state = MeasurementState::Idle;
-                match self.ec_calibration.calibrate(
+                let mut calibration = self.ec_calibration;
+                match calibration.calibrate(
                     Point {
                         y: actual_first,
                         x: first,
@@ -182,15 +186,32 @@ impl MeasurementManager {
                         x: second,
                     },
                 ) {
-                    Ok(_) => MeasurementAction::StoreEcCalibration {
-                        calibration: self.ec_calibration,
-                    },
-                    Err(_) => MeasurementAction::ShowError {
-                        error: MeasurementError::CalibrationFailed,
-                    },
+                    Ok(_) => {
+                        self.state = MeasurementState::FinishingEc { calibration };
+                        MeasurementAction::WaitForFinish
+                    }
+                    Err(_) => {
+                        self.state = MeasurementState::Idle;
+                        MeasurementAction::ShowError {
+                            error: MeasurementError::CalibrationFailed,
+                        }
+                    }
                 }
             }
             (MeasurementState::CalibratingEcSecond { .. }, MeasurementEvent::Abort) => {
+                self.state = MeasurementState::Idle;
+                MeasurementAction::WaitForNext
+            }
+            (
+                MeasurementState::FinishingEc { calibration },
+                MeasurementEvent::FinishCalibration,
+            ) => {
+                let calibration = *calibration;
+                self.ec_calibration = calibration;
+                self.state = MeasurementState::Idle;
+                MeasurementAction::StoreEcCalibration { calibration }
+            }
+            (MeasurementState::FinishingEc { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
                 MeasurementAction::WaitForNext
             }
@@ -227,8 +248,8 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                self.state = MeasurementState::Idle;
-                match self.ph_calibration.calibrate(
+                let mut calibration = self.ph_calibration;
+                match calibration.calibrate(
                     Point {
                         y: actual_first,
                         x: first,
@@ -238,15 +259,32 @@ impl MeasurementManager {
                         x: second,
                     },
                 ) {
-                    Ok(_) => MeasurementAction::StorePhCalibration {
-                        calibration: self.ph_calibration,
-                    },
-                    Err(_) => MeasurementAction::ShowError {
-                        error: MeasurementError::CalibrationFailed,
-                    },
+                    Ok(_) => {
+                        self.state = MeasurementState::FinishingPh { calibration };
+                        MeasurementAction::WaitForFinish
+                    }
+                    Err(_) => {
+                        self.state = MeasurementState::Idle;
+                        MeasurementAction::ShowError {
+                            error: MeasurementError::CalibrationFailed,
+                        }
+                    }
                 }
             }
             (MeasurementState::CalibratingPhSecond { .. }, MeasurementEvent::Abort) => {
+                self.state = MeasurementState::Idle;
+                MeasurementAction::WaitForNext
+            }
+            (
+                MeasurementState::FinishingPh { calibration },
+                MeasurementEvent::FinishCalibration,
+            ) => {
+                let calibration = *calibration;
+                self.ph_calibration = calibration;
+                self.state = MeasurementState::Idle;
+                MeasurementAction::StorePhCalibration { calibration }
+            }
+            (MeasurementState::FinishingPh { .. }, MeasurementEvent::Abort) => {
                 self.state = MeasurementState::Idle;
                 MeasurementAction::WaitForNext
             }
@@ -294,6 +332,10 @@ mod test {
                 second: 10.0,
                 actual_second: 100.0,
             }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FinishCalibration),
             MeasurementAction::StoreEcCalibration {
                 calibration: linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 },)
             }
@@ -314,6 +356,10 @@ mod test {
                 second: 10.0,
                 actual_second: 17.0,
             }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FinishCalibration),
             MeasurementAction::StorePhCalibration {
                 calibration: linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 },)
             }
@@ -365,10 +411,72 @@ mod test {
             second: 10.0,
             actual_second: 100.0,
         });
+        manager.handle_event(MeasurementEvent::FinishCalibration);
         assert_eq!(
             manager.handle_event(MeasurementEvent::CalibrationStored),
             MeasurementAction::WaitForNext
         );
+    }
+
+    #[test]
+    fn test_abort_before_finish_discards_ec_calibration() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 0.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 100.0,
+            }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+        assert!(!manager.ec_calibration.is_calibrated());
+    }
+
+    #[test]
+    fn test_abort_before_finish_discards_ph_calibration() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 7.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 17.0,
+            }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::Abort),
+            MeasurementAction::WaitForNext
+        );
+        assert!(!manager.ph_calibration.is_calibrated());
+    }
+
+    #[test]
+    fn test_calibration_is_not_applied_before_finish() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 0.0,
+        });
+        manager.handle_event(MeasurementEvent::SecondMeasured {
+            second: 10.0,
+            actual_second: 100.0,
+        });
+        assert!(!manager.ec_calibration.is_calibrated());
+        manager.handle_event(MeasurementEvent::FinishCalibration);
+        assert!(manager.ec_calibration.is_calibrated());
     }
 
     #[test]
@@ -500,6 +608,10 @@ mod test {
                 second: 10.0,
                 actual_second: 100.0,
             }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FinishCalibration),
             MeasurementAction::StoreEcCalibration {
                 calibration: linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 },)
             }
@@ -584,6 +696,10 @@ mod test {
                 second: 10.0,
                 actual_second: 17.0,
             }),
+            MeasurementAction::WaitForFinish
+        );
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::FinishCalibration),
             MeasurementAction::StorePhCalibration {
                 calibration: linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 },)
             }

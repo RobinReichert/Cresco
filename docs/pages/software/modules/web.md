@@ -72,6 +72,7 @@ sensor from its own path.
 | `/api/calibration/status` | `GET` | current calibration status |
 | `/api/calibration/start` | `POST` | start a calibration |
 | `/api/calibration/point` | `POST` | take a calibration point |
+| `/api/calibration/finish` | `POST` | store the finished calibration |
 | `/api/calibration/abort` | `POST` | abort the running calibration |
 
 The `POST` routes take a url-encoded form:
@@ -79,15 +80,16 @@ The `POST` routes take a url-encoded form:
 - `start`: `sensor=ph` or `sensor=ec`
 - `point`: `sensor=ph` or `sensor=ec`, and `actual=<value>`, the known
   value of the solution the probe is in
-- `abort`: no body
+- `finish`, `abort`: no body
 
 **Measurements.** The response is `{ "ph": .., "ec": .. }`. A value is `null`
 while its sensor is not calibrated or has not been measured since. The values
 come from the blackboard, which the measurement task only writes once **both**
-sensors are calibrated and a periodic measurement (every 60 s) has run.
+sensors are calibrated and a measurement has run: right at boot, right after
+a calibration is finished, and then every 60 s.
 
-**Commands.** `start`, `point` and `abort` do not wait for the result. They
-put a `MeasurementCommand` into a channel of capacity 1 and answer
+**Commands.** `start`, `point`, `finish` and `abort` do not wait for the
+result. They put a `MeasurementCommand` into a channel of capacity 1 and answer
 immediately.
 
 | status | meaning |
@@ -96,8 +98,8 @@ immediately.
 | `400` | the form could not be decoded |
 | `503` | the channel is full, the device is busy; try again |
 
-A `200` only means "accepted". A `point` or `abort` while no calibration is
-waiting for it is accepted but has no effect.
+A `200` only means "accepted". A `point`, `finish` or `abort` while no
+calibration is waiting for it is accepted but has no effect.
 
 **Status.** The result of a command is read from `/api/calibration/status`,
 which returns `{ "status": .. }` with a `MeasurementStatus` in `snake_case`:
@@ -109,7 +111,7 @@ which returns `{ "status": .. }` with a `MeasurementStatus` in `snake_case`:
 | `awaiting_second_point` | point 1 taken, waiting for point 2 |
 | `probe_read_failed` | the probe could not be read; calibration ended |
 | `calibration_failed` | the points could not be fitted; calibration ended |
-| `calibration_succeeded` | both points taken, the sensor is calibrated |
+| `calibration_succeeded` | both points taken, waiting for `finish` |
 | `calibration_aborted` | aborted, or an unexpected command arrived |
 
 ### Calibration Page
@@ -126,9 +128,12 @@ giving up after 15 s) until the status leaves the state it was waiting in:
 
 If the status becomes `probe_read_failed`, `calibration_failed` or
 `calibration_aborted` instead, the page shows an error and returns to the
-start step. When the user leaves the page mid-calibration (cancel, back,
-reload, closing the tab) it sends `abort` with `navigator.sendBeacon`, so the
-device is not left waiting for a point.
+start step. The calibration only takes effect when the user presses *Back to
+dashboard* on the **Done** step, which sends `finish`: the device then applies
+and stores the calibration and measures right away. When the user leaves the
+page before that (cancel, back, reload, closing the tab) it sends `abort` with
+`navigator.sendBeacon`, so the device is not left waiting for a point or for
+`finish`, and the new calibration is discarded.
 
 {: .note}
 > Calibration is held in RAM only. After a reboot both sensors are

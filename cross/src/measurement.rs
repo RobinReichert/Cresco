@@ -22,6 +22,7 @@ pub enum MeasurementCommand {
     Abort,
     StartEcCalibration,
     StartPhCalibration,
+    FinishCalibration,
     EcMeasurement { actual_ec: Float },
     PhMeasurement { actual_ph: Float },
 }
@@ -68,15 +69,13 @@ pub async fn measurement_task(
                 if !storage.set_ec_calibration(calibration).await {
                     info!("could not store the ec calibration");
                 }
-                *status.lock().await = MeasurementStatus::CalibrationSucceeded;
-                event = Some(next_trigger(commands).await);
+                event = Some(MeasurementEvent::CalibrationStored);
             }
             MeasurementAction::StorePhCalibration { calibration } => {
                 if !storage.set_ph_calibration(calibration).await {
                     info!("could not store the ph calibration");
                 }
-                *status.lock().await = MeasurementStatus::CalibrationSucceeded;
-                event = Some(next_trigger(commands).await);
+                event = Some(MeasurementEvent::CalibrationStored);
             }
             MeasurementAction::MeasureEc => {
                 event = Some(match ec_probe.read().await {
@@ -190,6 +189,16 @@ pub async fn measurement_task(
                         MeasurementEvent::Abort
                     },
                 )
+            }
+            MeasurementAction::WaitForFinish => {
+                *status.lock().await = MeasurementStatus::CalibrationSucceeded;
+                event = Some(match commands.receive().await {
+                    MeasurementCommand::FinishCalibration => MeasurementEvent::FinishCalibration,
+                    _ => {
+                        *status.lock().await = MeasurementStatus::CalibrationAborted;
+                        MeasurementEvent::Abort
+                    }
+                });
             }
             MeasurementAction::Ignore => {
                 panic!("invalid state, event combination");

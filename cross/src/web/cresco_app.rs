@@ -49,6 +49,7 @@ impl AppBuilder for CrescoApp {
             .route("/api/calibration/status", get(calibration::status))
             .route("/api/calibration/start", post(calibration::start))
             .route("/api/calibration/point", post(calibration::point))
+            .route("/api/calibration/finish", post(calibration::finish))
             .route("/api/calibration/abort", post(calibration::abort))
             .with_state(self.calibration)
     }

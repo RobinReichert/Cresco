@@ -81,3 +81,7 @@ pub async fn point(
 pub async fn abort(State(state): State<CalibrationState>) -> StatusCode {
     send_command(&state, MeasurementCommand::Abort)
 }
+
+pub async fn finish(State(state): State<CalibrationState>) -> StatusCode {
+    send_command(&state, MeasurementCommand::FinishCalibration)
+}

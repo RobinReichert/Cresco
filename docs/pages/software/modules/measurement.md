@@ -32,6 +32,8 @@ the *driver* that carries it out.
 | `CalibratingEcSecond` | Waiting for the second EC calibration point |
 | `CalibratingPhFirst` | Waiting for the first pH calibration point |
 | `CalibratingPhSecond` | Waiting for the second pH calibration point |
+| `FinishingEc` | EC calibration computed, waiting for the user to finish it |
+| `FinishingPh` | pH calibration computed, waiting for the user to finish it |
 
 ### `MeasurementEvent`
 
@@ -39,7 +41,8 @@ the *driver* that carries it out.
 | --- | --- |
 | `Start` | Once, at boot; measures immediately if both sensors are calibrated |
 | `StartMeasurement` | The periodic timer elapsed |
-| `CalibrationStored` | A new calibration was stored |
+| `FinishCalibration` | The user finished the calibration; apply and store it |
+| `CalibrationStored` | A calibration was stored; measure if both are set |
 | `Start(Ec/Ph)Calibration` | User requested a calibration |
 | `FirstMeasured` / `SecondMeasured` | Probe was read for a calibration point |
 | `(Ec/Ph)Measured` | Routine measurement of that sensor completed |
@@ -52,7 +55,8 @@ the *driver* that carries it out.
 | `Ignore` | The event was not valid in the current state; do nothing |
 | `MeasureEc` / `MeasurePh` | Read that probe |
 | `Retrieve(Ec/Ph)(First/Second)` | Read probe at Calibration point |
-| `Store(Ec/Ph)Calibration { calibration }` | Calibration succeeded; store it |
+| `WaitForFinish` | Calibration computed; wait for the user to finish or abort |
+| `Store(Ec/Ph)Calibration { calibration }` | Calibration finished; store it |
 | `WriteMeasurements { ec, ph }` | Write calibrated readings to the blackboard |
 | `ShowError { error }` | Report a `MeasurementError` |
 | `WaitForNext` | Nothing to do; block until the next trigger |
@@ -69,6 +73,13 @@ Measuring does not wait for the periodic timer in two cases: at boot, when
 both calibrations were loaded from storage (`Start`), and right after a
 calibration is stored (`CalibrationStored`), provided the other sensor is
 already calibrated too.
+
+A calibration is not applied when the second point is taken. The manager
+computes it into `FinishingEc`/`FinishingPh` and waits for `FinishCalibration`,
+which only then replaces the sensor's calibration and stores it. `Abort` in
+these states discards the computed calibration and keeps the old one. If the
+two points cannot be fitted, the manager reports `CalibrationFailed` and
+returns to `Idle` without entering the finishing state.
 
 `FirstMeasured`/`SecondMeasured` carry both the raw probe reading and the
 actual reference value the user provided (e.g. the pH of a buffer solution),
@@ -94,4 +105,5 @@ unconditionally replaces the previous value, so a reader always sees the
 current status rather than draining a queue of stale ones.
 
 `CalibrationAborted` is set when something other than the expected calibration
-point arrives while the driver waits for one (e.g. an abort).
+point (or for `FinishCalibration`) arrives while the driver waits for one
+(e.g. an abort).

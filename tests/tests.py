@@ -74,7 +74,7 @@ def is_close(actual: float | str, expected: float, tolerance: float) -> bool:
 def storage_test(driver: WebDriver, address: IPv4Address) -> None:
     subprocess.run(["probe-rs", "reset", "--chip", "esp32c3"], check=True)
     print("waiting for first measurement")
-    time.sleep(5)
+    time.sleep(1)
     assert mp_run.run("tests/client/mdns_resolver.py").wait() == 0, (
         "cresco did not rejoin network after reset"
     )
@@ -121,7 +121,7 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
         calibrate_ph.submit_point(1.0)
         set_voltage(runner, "ph", 2.5)
         calibrate_ph.submit_point(2.0)
-        time.sleep(3)
+        time.sleep(1)
         set_voltage(runner, "ec", 2.0)
         set_voltage(runner, "ph", 1.5)
         dashboard = calibrate_ph.finish()

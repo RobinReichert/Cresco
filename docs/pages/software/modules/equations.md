@@ -21,13 +21,13 @@ two `Point { x, y }`:
 let linear = Linear::new(m, t);
 let linear = Linear::from_points(first, second)?;
 
-let y = linear.apply(x);
+let y = linear.y(x);
 ```
 
 `from_points` fails if the points share an `x` (vertical line) or a `y`
 (constant line).
 
-`apply` evaluates `m*x + t`. A `Linear` is always valid; a sensor that is not
+`y` evaluates `m*x + t`. A `Linear` is always valid; a sensor that is not
 calibrated yet is represented by the absence of one (`Option<Linear>`).
 
 The measurement module uses `from_points` to fit a sensor's line through the

@@ -127,8 +127,8 @@ impl MeasurementManager {
                 match (self.ec_calibration, self.ph_calibration) {
                     (Some(ec_calibration), Some(ph_calibration)) => {
                         MeasurementAction::WriteMeasurements {
-                            ec: ec_calibration.apply(ec),
-                            ph: ph_calibration.apply(ph),
+                            ec: ec_calibration.y(ec),
+                            ph: ph_calibration.y(ph),
                         }
                     }
                     (_, _) => MeasurementAction::ShowError {

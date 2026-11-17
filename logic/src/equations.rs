@@ -45,7 +45,7 @@ impl Linear {
         Ok(Self::new(m, first.y - m * first.x))
     }
 
-    pub fn apply(&self, x: Float) -> Float {
+    pub fn y(&self, x: Float) -> Float {
         self.m * x + self.t
     }
 }
@@ -56,12 +56,12 @@ mod test {
     use sequential_storage::map::Value;
 
     #[test]
-    fn test_apply() {
+    fn test_y() {
         let linear = Linear::new(2.0, 1.0);
 
-        assert_eq!(linear.apply(0.0), 1.0);
-        assert_eq!(linear.apply(2.0), 5.0);
-        assert_eq!(linear.apply(-1.0), -1.0);
+        assert_eq!(linear.y(0.0), 1.0);
+        assert_eq!(linear.y(2.0), 5.0);
+        assert_eq!(linear.y(-1.0), -1.0);
     }
 
     #[test]
@@ -84,9 +84,9 @@ mod test {
         let second = Point { x: 2.0, y: 4.0 };
         let linear = Linear::from_points(first, second).unwrap();
 
-        assert_eq!(linear.apply(0.0), 0.0);
-        assert_eq!(linear.apply(2.0), 4.0);
-        assert_eq!(linear.apply(1.0), 2.0);
+        assert_eq!(linear.y(0.0), 0.0);
+        assert_eq!(linear.y(2.0), 4.0);
+        assert_eq!(linear.y(1.0), 2.0);
     }
 
     const STORED_LEN: usize = 2 * core::mem::size_of::<Float>();

@@ -63,11 +63,11 @@ the *driver* that carries it out.
 
 ## Calibration
 
-Each sensor owns its own `calibration::Linear`, calibrated independently. A
-measurement cycle only runs once **both** are calibrated — `Idle` +
-`StartMeasurement` checks `is_calibrated()` on each before proceeding to
-`MeasuringEc`; until then it returns `ShowError { error: NotCalibratedYet }`
-and stays in `Idle`.
+Each sensor owns its own `Option<equations::Linear>`, calibrated
+independently; `None` means not calibrated yet. A measurement cycle only runs
+once **both** are `Some` — `Idle` + `StartMeasurement` checks this before
+proceeding to `MeasuringEc`; until then it returns
+`ShowError { error: NotCalibratedYet }` and stays in `Idle`.
 
 Measuring does not wait for the periodic timer in two cases: at boot, when
 both calibrations were loaded from storage (`Start`), and right after a

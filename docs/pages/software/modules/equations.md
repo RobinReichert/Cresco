@@ -21,14 +21,15 @@ two `Point { x, y }`:
 let linear = Linear::new(m, t);
 let linear = Linear::from_points(first, second)?;
 
-let y = linear.y(x);
+let y = linear.y(x)?;
 ```
 
 `from_points` fails if the points share an `x` (vertical line) or a `y`
 (constant line).
 
-`y` evaluates `m*x + t`. A `Linear` is always valid; a sensor that is not
-calibrated yet is represented by the absence of one (`Option<Linear>`).
+`y` comes from the `Equation` trait, which every equation implements. For
+`Linear` it evaluates `m*x + t`. A `Linear` is always valid; a sensor that is
+not calibrated yet is represented by the absence of one (`Option<Linear>`).
 
 The measurement module uses `from_points` to fit a sensor's line through the
 two calibration points.

@@ -1,6 +1,6 @@
 use crate::{
     Float,
-    equations::{self, Point},
+    equations::{self, Equation, Point},
 };
 
 pub enum MeasurementState {
@@ -124,14 +124,14 @@ impl MeasurementManager {
             (MeasurementState::MeasuringPh { ec }, MeasurementEvent::PhMeasured { ph }) => {
                 let ec = *ec;
                 self.state = MeasurementState::Idle;
-                match (self.ec_calibration, self.ph_calibration) {
-                    (Some(ec_calibration), Some(ph_calibration)) => {
-                        MeasurementAction::WriteMeasurements {
-                            ec: ec_calibration.y(ec),
-                            ph: ph_calibration.y(ph),
-                        }
-                    }
-                    (_, _) => MeasurementAction::ShowError {
+                let calibrated = self.ec_calibration.zip(self.ph_calibration).and_then(
+                    |(ec_calibration, ph_calibration)| {
+                        Some((ec_calibration.y(ec).ok()?, ph_calibration.y(ph).ok()?))
+                    },
+                );
+                match calibrated {
+                    Some((ec, ph)) => MeasurementAction::WriteMeasurements { ec, ph },
+                    None => MeasurementAction::ShowError {
                         error: MeasurementError::NotCalibratedYet,
                     },
                 }

@@ -2,6 +2,10 @@ use crate::Float;
 
 use sequential_storage::map::SerializationError;
 
+pub trait Equation {
+    fn y(&self, x: Float) -> Result<Float, ()>;
+}
+
 #[derive(Clone, Copy)]
 pub struct Point {
     pub x: Float,
@@ -32,6 +36,12 @@ impl<'d> sequential_storage::map::Value<'d> for Linear {
     }
 }
 
+impl Equation for Linear {
+    fn y(&self, x: Float) -> Result<Float, ()> {
+        Ok(self.m * x + self.t)
+    }
+}
+
 impl Linear {
     pub fn new(m: Float, t: Float) -> Self {
         Self { m, t }
@@ -44,10 +54,6 @@ impl Linear {
         let m = (second.y - first.y) / (second.x - first.x);
         Ok(Self::new(m, first.y - m * first.x))
     }
-
-    pub fn y(&self, x: Float) -> Float {
-        self.m * x + self.t
-    }
 }
 
 #[cfg(test)]
@@ -59,9 +65,9 @@ mod test {
     fn test_y() {
         let linear = Linear::new(2.0, 1.0);
 
-        assert_eq!(linear.y(0.0), 1.0);
-        assert_eq!(linear.y(2.0), 5.0);
-        assert_eq!(linear.y(-1.0), -1.0);
+        assert_eq!(linear.y(0.0), Ok(1.0));
+        assert_eq!(linear.y(2.0), Ok(5.0));
+        assert_eq!(linear.y(-1.0), Ok(-1.0));
     }
 
     #[test]
@@ -84,9 +90,9 @@ mod test {
         let second = Point { x: 2.0, y: 4.0 };
         let linear = Linear::from_points(first, second).unwrap();
 
-        assert_eq!(linear.y(0.0), 0.0);
-        assert_eq!(linear.y(2.0), 4.0);
-        assert_eq!(linear.y(1.0), 2.0);
+        assert_eq!(linear.y(0.0), Ok(0.0));
+        assert_eq!(linear.y(2.0), Ok(4.0));
+        assert_eq!(linear.y(1.0), Ok(2.0));
     }
 
     const STORED_LEN: usize = 2 * core::mem::size_of::<Float>();

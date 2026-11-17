@@ -3,7 +3,7 @@ use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embedded_storage_async::nor_flash::NorFlash;
 use esp_storage::FlashStorage;
-use logic::{calibration, wifi::LoginData};
+use logic::{equations, wifi::LoginData};
 use sequential_storage::{
     cache::{KeyCacheImpl, NoCache},
     map::{MapConfig, MapStorage},
@@ -71,7 +71,7 @@ where
         return Ok(credentials);
     }
 
-    pub async fn set_ph_calibration(&self, calibration: calibration::Linear) -> bool {
+    pub async fn set_ph_calibration(&self, calibration: equations::Linear) -> bool {
         let mut data_buffer = [0u8; BUFFER_SIZE];
         self.storage
             .lock()
@@ -81,7 +81,7 @@ where
             .is_ok()
     }
 
-    pub async fn get_ph_calibration(&self) -> Result<calibration::Linear, ()> {
+    pub async fn get_ph_calibration(&self) -> Result<equations::Linear, ()> {
         let mut data_buffer = [0u8; BUFFER_SIZE];
         let calibration = self
             .storage
@@ -94,7 +94,7 @@ where
         return Ok(calibration);
     }
 
-    pub async fn set_ec_calibration(&self, calibration: calibration::Linear) -> bool {
+    pub async fn set_ec_calibration(&self, calibration: equations::Linear) -> bool {
         let mut data_buffer = [0u8; BUFFER_SIZE];
         self.storage
             .lock()
@@ -104,7 +104,7 @@ where
             .is_ok()
     }
 
-    pub async fn get_ec_calibration(&self) -> Result<calibration::Linear, ()> {
+    pub async fn get_ec_calibration(&self) -> Result<equations::Linear, ()> {
         let mut data_buffer = [0u8; BUFFER_SIZE];
         let calibration = self
             .storage

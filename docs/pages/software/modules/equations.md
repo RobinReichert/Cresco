@@ -1,15 +1,17 @@
 ---
-title: Calibration
+title: Equations
 layout: default
 parent: Modules
 nav_order: 9
 ---
 
-# Calibration
+# Equations
 
-The `calibration` module provides `Linear`, a two-point linear calibration
-for translating a raw sensor reading into a calibrated value (e.g. converting
-a raw pH probe voltage into an actual pH value).
+The `equations` module holds the mathematical functions the firmware uses. It
+currently provides `Linear`, a linear function `y = m*x + t` fitted through two
+points. It is used to calibrate sensors, translating a raw reading into a
+calibrated value (e.g. converting a raw pH probe voltage into an actual pH
+value).
 
 ## Usage
 

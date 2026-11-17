@@ -9,7 +9,7 @@ use embassy_time::{Duration, Instant, Timer};
 use esp_hal::peripherals::{GPIO0, GPIO1};
 use logic::{
     Float,
-    calibration::Linear,
+    equations::Linear,
     measurement::{MeasurementAction, MeasurementError, MeasurementEvent, MeasurementManager},
 };
 

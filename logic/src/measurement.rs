@@ -1,6 +1,6 @@
 use crate::{
     Float,
-    calibration::{self, Point},
+    equations::{self, Point},
 };
 
 pub enum MeasurementState {
@@ -12,8 +12,8 @@ pub enum MeasurementState {
     CalibratingEcSecond { first: Float, actual_first: Float },
     CalibratingPhFirst,
     CalibratingPhSecond { first: Float, actual_first: Float },
-    FinishingEc { calibration: calibration::Linear },
-    FinishingPh { calibration: calibration::Linear },
+    FinishingEc { calibration: equations::Linear },
+    FinishingPh { calibration: equations::Linear },
 }
 
 pub enum MeasurementEvent {
@@ -47,22 +47,22 @@ pub enum MeasurementAction {
     RetrieveEcSecond,
     RetrievePhFirst,
     RetrievePhSecond,
-    StoreEcCalibration { calibration: calibration::Linear },
-    StorePhCalibration { calibration: calibration::Linear },
+    StoreEcCalibration { calibration: equations::Linear },
+    StorePhCalibration { calibration: equations::Linear },
     WaitForFinish,
     WaitForNext,
 }
 
 pub struct MeasurementManager {
     state: MeasurementState,
-    ec_calibration: calibration::Linear,
-    ph_calibration: calibration::Linear,
+    ec_calibration: equations::Linear,
+    ph_calibration: equations::Linear,
 }
 
 impl MeasurementManager {
     pub fn new() -> Self {
-        let ec_calibration = calibration::Linear::new();
-        let ph_calibration = calibration::Linear::new();
+        let ec_calibration = equations::Linear::new();
+        let ph_calibration = equations::Linear::new();
         Self {
             state: MeasurementState::Start,
             ec_calibration,
@@ -71,8 +71,8 @@ impl MeasurementManager {
     }
 
     pub fn with_calibrations(
-        ec_calibration: calibration::Linear,
-        ph_calibration: calibration::Linear,
+        ec_calibration: equations::Linear,
+        ph_calibration: equations::Linear,
     ) -> Self {
         Self {
             state: MeasurementState::Start,
@@ -297,8 +297,8 @@ impl MeasurementManager {
 mod test {
     use super::*;
 
-    fn linear(first: Point, second: Point) -> calibration::Linear {
-        let mut linear = calibration::Linear::new();
+    fn linear(first: Point, second: Point) -> equations::Linear {
+        let mut linear = equations::Linear::new();
         linear.calibrate(first, second).unwrap();
         linear
     }
@@ -372,11 +372,11 @@ mod test {
         started_manager();
     }
 
-    fn ec_calibration() -> calibration::Linear {
+    fn ec_calibration() -> equations::Linear {
         linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 })
     }
 
-    fn ph_calibration() -> calibration::Linear {
+    fn ph_calibration() -> equations::Linear {
         linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 })
     }
 
@@ -392,7 +392,7 @@ mod test {
     #[test]
     fn test_start_when_only_one_sensor_calibrated_waits() {
         let mut manager =
-            MeasurementManager::with_calibrations(ec_calibration(), calibration::Linear::new());
+            MeasurementManager::with_calibrations(ec_calibration(), equations::Linear::new());
         assert_eq!(
             manager.handle_event(MeasurementEvent::Start),
             MeasurementAction::WaitForNext

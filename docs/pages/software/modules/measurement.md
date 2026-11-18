@@ -63,11 +63,11 @@ the *driver* that carries it out.
 
 ## Calibration
 
-Each sensor owns its own `calibration::Linear`, calibrated independently. A
-measurement cycle only runs once **both** are calibrated — `Idle` +
-`StartMeasurement` checks `is_calibrated()` on each before proceeding to
-`MeasuringEc`; until then it returns `ShowError { error: NotCalibratedYet }`
-and stays in `Idle`.
+Each sensor owns its own `Option<equations::Equation>`, calibrated
+independently; `None` means not calibrated yet. A measurement cycle only runs
+once **both** are `Some` — `Idle` + `StartMeasurement` checks this before
+proceeding to `MeasuringEc`; until then it returns
+`ShowError { error: NotCalibratedYet }` and stays in `Idle`.
 
 Measuring does not wait for the periodic timer in two cases: at boot, when
 both calibrations were loaded from storage (`Start`), and right after a
@@ -78,8 +78,9 @@ A calibration is not applied when the second point is taken. The manager
 computes it into `FinishingEc`/`FinishingPh` and waits for `FinishCalibration`,
 which only then replaces the sensor's calibration and stores it. `Abort` in
 these states discards the computed calibration and keeps the old one. If the
-two points cannot be fitted, the manager reports `CalibrationFailed` and
-returns to `Idle` without entering the finishing state.
+two readings are identical, or the two reference values are, the manager
+reports `CalibrationFailed` and returns to `Idle` without entering the
+finishing state.
 
 `FirstMeasured`/`SecondMeasured` carry both the raw probe reading and the
 actual reference value the user provided (e.g. the pH of a buffer solution),

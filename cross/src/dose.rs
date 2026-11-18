@@ -3,6 +3,7 @@ use crate::stepper::{Stepper, dummy::Dummy};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use embassy_time::{Duration, Instant, Timer};
 use logic::Float;
+use logic::equations::Equation;
 use logic::pid::PidController;
 
 pub type ConcreteStepper<'a> = Dummy<'a>;
@@ -20,6 +21,8 @@ pub async fn dose_task(
 ) {
     let mut ec_pid_controller = PidController::new(1.0, 1.0, 1.0);
     let mut ph_pid_controller = PidController::new(1.0, 1.0, 1.0);
+    let ec_target_equation = Equation::Constant { c: 5.0 };
+    let ph_target_equation = Equation::Constant { c: 5.0 };
     let mut next_period = Instant::now();
     loop {
         Timer::at(next_period).await;
@@ -28,9 +31,14 @@ pub async fn dose_task(
         let measurements = blackboard::snapshot().await;
         match (measurements.ec, measurements.ph) {
             (Some(ec), Some(ph)) => {
+                let now_secs = Instant::now().as_secs();
+                let ec_target = match ec_target_equation.y(now_secs as Float) {
+                    Ok(y) => y,
+                    Err(_) => continue,
+                };
                 let ec_steps = ec_pid_controller.calculate(
                     ec,
-                    5.0,
+                    ec_target,
                     (timestamp / PERIOD_LENGTH.as_millis()) as usize,
                 ) * RATE;
                 if ec_steps > THRESHOLD {
@@ -38,9 +46,13 @@ pub async fn dose_task(
                     let _ = ec_pump.release().await;
                     ph_pid_controller.reset();
                 } else {
+                    let ph_target = match ph_target_equation.y(now_secs as Float) {
+                        Ok(y) => y,
+                        Err(_) => continue,
+                    };
                     let ph_steps = ph_pid_controller.calculate(
                         ph,
-                        5.0,
+                        ph_target,
                         (timestamp / PERIOD_LENGTH.as_millis()) as usize,
                     ) * RATE;
                     if ph_steps.abs() > THRESHOLD {

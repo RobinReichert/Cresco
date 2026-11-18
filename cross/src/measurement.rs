@@ -9,7 +9,6 @@ use embassy_time::{Duration, Instant, Timer};
 use esp_hal::peripherals::{GPIO0, GPIO1};
 use logic::{
     Float,
-    calibration::Linear,
     measurement::{MeasurementAction, MeasurementError, MeasurementEvent, MeasurementManager},
 };
 
@@ -50,14 +49,8 @@ pub async fn measurement_task(
     storage: &'static ConcreteStorage,
     fresh: &'static Signal<CriticalSectionRawMutex, u64>,
 ) {
-    let ph = storage
-        .get_ph_calibration()
-        .await
-        .unwrap_or_else(|_| Linear::new());
-    let ec = storage
-        .get_ec_calibration()
-        .await
-        .unwrap_or_else(|_| Linear::new());
+    let ph = storage.get_ph_calibration().await.ok();
+    let ec = storage.get_ec_calibration().await.ok();
     let mut manager = MeasurementManager::with_calibrations(ec, ph);
     let mut event: Option<MeasurementEvent> = Some(MeasurementEvent::Start);
     loop {

@@ -8,11 +8,12 @@ nav_order: 9
 # Equations
 
 The `equations` module holds the mathematical functions the firmware uses as
-one enum, `Equation`. It currently has a single variant:
+one enum, `Equation`.
 
 | Variant | Function |
 | --- | --- |
 | `Linear { m, t }` | `y = m*x + t` |
+| `Constant { c }` | `y = c` |
 
 `Equation::Linear` is used to calibrate sensors, translating a raw reading
 into a calibrated value (e.g. converting a raw pH probe voltage into an actual
@@ -38,11 +39,3 @@ calibrated yet is represented by the absence of an equation
 
 The measurement module uses `linear_from_points` to fit a sensor's line
 through the two calibration points.
-
-## Storage
-
-`Equation` implements `sequential_storage::map::Value`. It is stored as one
-tag byte naming the variant (`1` = `Linear`), followed by the variant's
-values as little-endian floats (`m`, then `t`). Data without a known tag is
-rejected as invalid, so a calibration stored before the tag was introduced is
-treated as missing and the sensor has to be calibrated again.

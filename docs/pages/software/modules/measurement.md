@@ -63,7 +63,7 @@ the *driver* that carries it out.
 
 ## Calibration
 
-Each sensor owns its own `Option<equations::Linear>`, calibrated
+Each sensor owns its own `Option<equations::Equation>`, calibrated
 independently; `None` means not calibrated yet. A measurement cycle only runs
 once **both** are `Some` — `Idle` + `StartMeasurement` checks this before
 proceeding to `MeasuringEc`; until then it returns

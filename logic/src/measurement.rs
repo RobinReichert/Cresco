@@ -1,6 +1,6 @@
 use crate::{
     Float,
-    equations::{self, Equation, Point},
+    equations::{self, Point},
 };
 
 pub enum MeasurementState {
@@ -12,8 +12,8 @@ pub enum MeasurementState {
     CalibratingEcSecond { first: Float, actual_first: Float },
     CalibratingPhFirst,
     CalibratingPhSecond { first: Float, actual_first: Float },
-    FinishingEc { calibration: equations::Linear },
-    FinishingPh { calibration: equations::Linear },
+    FinishingEc { calibration: equations::Equation },
+    FinishingPh { calibration: equations::Equation },
 }
 
 pub enum MeasurementEvent {
@@ -47,16 +47,16 @@ pub enum MeasurementAction {
     RetrieveEcSecond,
     RetrievePhFirst,
     RetrievePhSecond,
-    StoreEcCalibration { calibration: equations::Linear },
-    StorePhCalibration { calibration: equations::Linear },
+    StoreEcCalibration { calibration: equations::Equation },
+    StorePhCalibration { calibration: equations::Equation },
     WaitForFinish,
     WaitForNext,
 }
 
 pub struct MeasurementManager {
     state: MeasurementState,
-    ec_calibration: Option<equations::Linear>,
-    ph_calibration: Option<equations::Linear>,
+    ec_calibration: Option<equations::Equation>,
+    ph_calibration: Option<equations::Equation>,
 }
 
 impl MeasurementManager {
@@ -69,8 +69,8 @@ impl MeasurementManager {
     }
 
     pub fn with_calibrations(
-        ec_calibration: Option<equations::Linear>,
-        ph_calibration: Option<equations::Linear>,
+        ec_calibration: Option<equations::Equation>,
+        ph_calibration: Option<equations::Equation>,
     ) -> Self {
         Self {
             state: MeasurementState::Start,
@@ -173,7 +173,7 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                match equations::Linear::from_points(
+                match equations::Equation::linear_from_points(
                     Point {
                         y: actual_first,
                         x: first,
@@ -245,7 +245,7 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                match equations::Linear::from_points(
+                match equations::Equation::linear_from_points(
                     Point {
                         y: actual_first,
                         x: first,
@@ -293,8 +293,8 @@ impl MeasurementManager {
 mod test {
     use super::*;
 
-    fn linear(first: Point, second: Point) -> equations::Linear {
-        equations::Linear::from_points(first, second).unwrap()
+    fn linear(first: Point, second: Point) -> equations::Equation {
+        equations::Equation::linear_from_points(first, second).unwrap()
     }
 
     fn started_manager() -> MeasurementManager {
@@ -366,11 +366,11 @@ mod test {
         started_manager();
     }
 
-    fn ec_calibration() -> equations::Linear {
+    fn ec_calibration() -> equations::Equation {
         linear(Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 100.0 })
     }
 
-    fn ph_calibration() -> equations::Linear {
+    fn ph_calibration() -> equations::Equation {
         linear(Point { x: 0.0, y: 7.0 }, Point { x: 10.0, y: 17.0 })
     }
 

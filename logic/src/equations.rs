@@ -9,7 +9,8 @@ const TAG_CONSTANT: u8 = 2;
 const LINEAR_SIZE: usize = TAG_SIZE + 2 * FLOAT_SIZE;
 const CONSTANT_SIZE: usize = TAG_SIZE + 1 * FLOAT_SIZE;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Equation {
     Linear { m: Float, t: Float },
     Constant { c: Float },

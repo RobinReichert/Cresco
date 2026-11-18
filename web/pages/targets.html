@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cresco Targets</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-canvas min-h-screen m-0 p-4 sm:p-6">
+    <div class="max-w-2xl mx-auto">
+        <header class="relative mb-4 text-center">
+            <a href="/" aria-label="Back to dashboard"
+               class="absolute left-0 top-0 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 ring-1 ring-black/5 shadow-sm text-label hover:text-primary transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </a>
+            <h1 class="text-gray-800 text-xl font-semibold">Targets</h1>
+        </header>
+
+        <p id="load-error" role="alert" class="hidden mb-4 text-danger text-sm"></p>
+
+        <div class="bg-white/70 backdrop-blur-md ring-1 ring-black/5 shadow-sm rounded-2xl p-5 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="w-2.5 h-2.5 rounded-full bg-ph" aria-hidden="true"></span>
+                <label for="kind-ph" class="flex-1 text-gray-800 font-bold text-sm">pH target</label>
+                <select id="kind-ph" class="w-40 px-3 py-2 border border-border rounded-md box-border text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-border-focus"></select>
+            </div>
+            <div id="fields-ph" class="grid grid-cols-2 gap-3"></div>
+            <p id="error-ph" role="alert" class="hidden mt-3 text-danger text-sm"></p>
+        </div>
+
+        <div class="bg-white/70 backdrop-blur-md ring-1 ring-black/5 shadow-sm rounded-2xl p-5 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="w-2.5 h-2.5 rounded-full bg-ec" aria-hidden="true"></span>
+                <label for="kind-ec" class="flex-1 text-gray-800 font-bold text-sm">EC target</label>
+                <select id="kind-ec" class="w-40 px-3 py-2 border border-border rounded-md box-border text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-border-focus"></select>
+            </div>
+            <div id="fields-ec" class="grid grid-cols-2 gap-3"></div>
+            <p id="error-ec" role="alert" class="hidden mt-3 text-danger text-sm"></p>
+        </div>
+
+        <div class="bg-white/70 backdrop-blur-md ring-1 ring-black/5 shadow-sm rounded-2xl p-5 mb-4">
+            <p class="text-gray-800 font-bold text-sm mb-3">Preview, next 30 days</p>
+            <div class="flex items-center gap-2 text-label text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-ph" aria-hidden="true"></span>pH
+            </div>
+            <div id="chart-ph"></div>
+            <div class="flex items-center gap-2 text-label text-xs mt-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-ec" aria-hidden="true"></span>EC
+            </div>
+            <div id="chart-ec"></div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="button" id="save"
+                    class="px-5 py-3 bg-secondary hover:bg-secondary-hover text-white border-none rounded-md text-base cursor-pointer transition-colors duration-300">Save targets</button>
+            <span id="status" class="text-label text-sm"></span>
+        </div>
+    </div>
+
+    <script>
+    const SECONDS_PER_DAY = 86400;
+    const DAYS = 30;
+    const STEPS = 60;
+    const INPUT_CLASS = 'w-full px-3 py-3 border border-border rounded-md box-border text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-border-focus';
+    const LABEL_CLASS = 'block mb-1 font-bold text-label text-xs';
+
+    const round = value => Number(value.toFixed(6));
+
+    // The device stores the raw equation. A linear equation is y = m*x + t with x in seconds,
+    // so the page shows its slope per day and the value at x = 0.
+    const kinds = {
+        constant: {
+            label: 'Constant',
+            fields: [['value', 'Value']],
+            fromEquation: eq => ({ value: round(eq.c) }),
+            toEquation: p => ({ constant: { c: p.value } }),
+            curve: p => () => p.value,
+            defaults: now => ({ value: round(now) }),
+        },
+        linear: {
+            label: 'Linear',
+            fields: [['start', 'Start value'], ['perDay', 'Change per day']],
+            fromEquation: eq => ({ start: round(eq.t), perDay: round(eq.m * SECONDS_PER_DAY) }),
+            toEquation: p => ({ linear: { m: p.perDay / SECONDS_PER_DAY, t: p.start } }),
+            curve: p => day => p.start + p.perDay * day,
+            defaults: now => ({ start: round(now), perDay: 0.05 }),
+        },
+    };
+
+    const sensors = {
+        ph: { kind: 'constant', params: {}, fill: 'var(--color-ph)', line: 'var(--color-ph-line)' },
+        ec: { kind: 'constant', params: {}, fill: 'var(--color-ec)', line: 'var(--color-ec-line)' },
+    };
+    const keys = Object.keys(sensors);
+
+    const el = id => document.getElementById(id);
+
+    function showText(id, message) {
+        const node = el(id);
+        node.textContent = message;
+        node.classList.toggle('hidden', !message);
+    }
+
+    function setStatus(message) {
+        el('status').textContent = message;
+    }
+
+    // Returns the parameters typed into the fields, or null if one of them is not a number.
+    function readParams(key) {
+        const params = {};
+        for (const [id] of kinds[sensors[key].kind].fields) {
+            const raw = el(`${key}-${id}`).value.trim();
+            const value = Number(raw);
+            if (raw === '' || !Number.isFinite(value)) return null;
+            params[id] = value;
+        }
+        return params;
+    }
+
+    function buildFields(key) {
+        const sensor = sensors[key];
+        const box = el(`fields-${key}`);
+        box.replaceChildren();
+        for (const [id, label] of kinds[sensor.kind].fields) {
+            const wrap = document.createElement('div');
+            const title = document.createElement('label');
+            title.htmlFor = `${key}-${id}`;
+            title.className = LABEL_CLASS;
+            title.textContent = label;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = 'any';
+            input.inputMode = 'decimal';
+            input.id = `${key}-${id}`;
+            input.className = INPUT_CLASS;
+            input.value = sensor.params[id];
+            input.addEventListener('input', () => {
+                showText(`error-${key}`, '');
+                setStatus('Unsaved changes');
+                drawPreview();
+            });
+            wrap.append(title, input);
+            box.append(wrap);
+        }
+    }
+
+    function chart(values, sensor, showDays) {
+        const width = 560, height = showDays ? 128 : 100;
+        const left = 46, right = 14, top = 8, bottom = showDays ? 24 : 6;
+        let low = Math.min(...values), high = Math.max(...values);
+        if (high - low < 1) {
+            const middle = (high + low) / 2;
+            low = middle - 0.5;
+            high = middle + 0.5;
+        } else {
+            const pad = (high - low) * 0.1;
+            low -= pad;
+            high += pad;
+        }
+        const x = i => left + (width - left - right) * i / (values.length - 1);
+        const y = v => top + (height - top - bottom) * (1 - (v - low) / (high - low));
+        const grid = 'stroke="var(--color-border)" stroke-opacity="0.4" stroke-width="1"';
+        const text = 'font-size="11" style="fill:var(--color-label)"';
+        let svg = '';
+        for (const tick of [low, (low + high) / 2, high]) {
+            svg += `<line x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}" ${grid}/>`;
+            svg += `<text x="${left - 6}" y="${y(tick) + 4}" text-anchor="end" ${text}>${tick.toFixed(2)}</text>`;
+        }
+        for (const day of [0, 10, 20, 30]) {
+            const dx = x(day * STEPS / DAYS);
+            svg += `<line x1="${dx}" x2="${dx}" y1="${top}" y2="${height - bottom}" ${grid}/>`;
+            if (showDays) {
+                const anchor = day === DAYS ? 'end' : 'middle';
+                svg += `<text x="${dx}" y="${height - 6}" text-anchor="${anchor}" ${text}>${day === 0 ? 'now' : `${day} d`}</text>`;
+            }
+        }
+        const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+        const base = height - bottom;
+        svg += `<polygon points="${x(0).toFixed(1)},${base} ${points} ${x(values.length - 1).toFixed(1)},${base}" fill-opacity="0.35" style="fill:${sensor.fill}"/>`;
+        svg += `<polyline points="${points}" fill="none" stroke-width="2" stroke-linejoin="round" style="stroke:${sensor.line}"/>`;
+        svg += `<circle cx="${x(0)}" cy="${y(values[0])}" r="3.5" style="fill:${sensor.line}"/>`;
+        return `<svg viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Target preview">${svg}</svg>`;
+    }
+
+    // A rough sketch of the equation, not an exact evaluation.
+    function drawPreview() {
+        keys.forEach((key, index) => {
+            const sensor = sensors[key];
+            const params = readParams(key);
+            const box = el(`chart-${key}`);
+            if (!params) {
+                box.innerHTML = '<p class="text-label text-sm text-center py-8">Enter a number in each field.</p>';
+                return;
+            }
+            const curve = kinds[sensor.kind].curve(params);
+            const values = [];
+            for (let i = 0; i <= STEPS; i++) values.push(curve(i * DAYS / STEPS));
+            box.innerHTML = chart(values, sensor, index === keys.length - 1);
+        });
+    }
+
+    function switchKind(key, kind) {
+        const sensor = sensors[key];
+        const params = readParams(key);
+        const now = params ? kinds[sensor.kind].curve(params)(0) : 0;
+        sensor.kind = kind;
+        sensor.params = kinds[kind].defaults(now);
+        showText(`error-${key}`, '');
+        buildFields(key);
+        setStatus('Unsaved changes');
+        drawPreview();
+    }
+
+    function setup(key) {
+        const select = el(`kind-${key}`);
+        for (const kind in kinds) {
+            const option = document.createElement('option');
+            option.value = kind;
+            option.textContent = kinds[kind].label;
+            select.append(option);
+        }
+        select.addEventListener('change', () => switchKind(key, select.value));
+    }
+
+    async function load() {
+        try {
+            const response = await fetch('/api/target/equation');
+            if (!response.ok) throw new Error('request rejected');
+            const data = await response.json();
+            for (const key of keys) {
+                const equation = data[key];
+                const kind = Object.keys(equation)[0];
+                if (!(kind in kinds)) throw new Error('unknown equation');
+                sensors[key].kind = kind;
+                sensors[key].params = kinds[kind].fromEquation(equation[kind]);
+                el(`kind-${key}`).value = kind;
+                buildFields(key);
+            }
+            drawPreview();
+        } catch (e) {
+            showText('load-error', e instanceof TypeError ? 'Could not reach the device.' : 'The targets could not be loaded.');
+        }
+    }
+
+    async function save() {
+        const equations = {};
+        let valid = true;
+        for (const key of keys) {
+            const params = readParams(key);
+            if (!params) {
+                showText(`error-${key}`, 'Enter a number in each field.');
+                valid = false;
+            } else {
+                equations[key] = kinds[sensors[key].kind].toEquation(params);
+            }
+        }
+        if (!valid) return;
+
+        el('save').disabled = true;
+        setStatus('Saving…');
+        try {
+            const response = await fetch('/api/target/equation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(equations),
+            });
+            if (response.ok) setStatus('Saved');
+            else if (response.status === 503) setStatus('The device is busy. Try again.');
+            else setStatus('The device rejected these values.');
+        } catch (e) {
+            setStatus('Could not reach the device.');
+        }
+        el('save').disabled = false;
+    }
+
+    keys.forEach(setup);
+    el('save').addEventListener('click', save);
+    load();
+    </script>
+</body>
+</html>

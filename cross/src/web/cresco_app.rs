@@ -1,8 +1,8 @@
 use crate::web::{
-    pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS},
+    pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS, TARGETS_HTML},
     services::{
         calibration::{self, CalibrationState},
-        measurements,
+        measurements, targets,
     },
 };
 use picoserve::{
@@ -16,6 +16,14 @@ async fn calibrate_page() -> impl picoserve::response::IntoResponse {
         StatusCode::OK,
         [("content-type", "text/html; charset=utf-8")],
         CALIBRATE_HTML,
+    )
+}
+
+async fn targets_page() -> impl picoserve::response::IntoResponse {
+    (
+        StatusCode::OK,
+        [("content-type", "text/html; charset=utf-8")],
+        TARGETS_HTML,
     )
 }
 
@@ -45,7 +53,13 @@ impl AppBuilder for CrescoApp {
             )
             .route("/calibrate/ph", get(calibrate_page))
             .route("/calibrate/ec", get(calibrate_page))
+            .route("/targets", get(targets_page))
             .route("/api/measurements", get(measurements::measurements))
+            .route("/api/target", get(targets::target))
+            .route(
+                "/api/target/equation",
+                get(targets::equations).post(targets::set_equations),
+            )
             .route("/api/calibration/status", get(calibration::status))
             .route("/api/calibration/start", post(calibration::start))
             .route("/api/calibration/point", post(calibration::point))

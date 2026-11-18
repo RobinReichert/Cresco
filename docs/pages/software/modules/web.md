@@ -55,9 +55,10 @@ the running system.
 
 | route | type | behaviour |
 | --- | --- | --- |
-| `/` | `GET` | dashboard: live pH and EC, settings drawer |
+| `/` | `GET` | dashboard: live pH and EC, current targets, settings drawer |
 | `/calibrate/ph` | `GET` | calibration wizard for pH |
 | `/calibrate/ec` | `GET` | calibration wizard for EC |
+| `/targets` | `GET` | page to choose the pH and EC targets |
 | `/style.css` | `GET` | compiled stylesheet |
 | `/plant.webp` | `GET` | dashboard image |
 
@@ -74,6 +75,9 @@ sensor from its own path.
 | `/api/calibration/point` | `POST` | take a calibration point |
 | `/api/calibration/finish` | `POST` | store the finished calibration |
 | `/api/calibration/abort` | `POST` | abort the running calibration |
+| `/api/target` | `GET` | the current pH and EC target values |
+| `/api/target/equation` | `GET` | the pH and EC target equations |
+| `/api/target/equation` | `POST` | set the pH and EC target equations |
 
 The `POST` routes take a url-encoded form:
 
@@ -139,12 +143,62 @@ page before that (cancel, back, reload, closing the tab) it sends `abort` with
 > Calibration is held in RAM only. After a reboot both sensors are
 > uncalibrated again and the dashboard shows *Not calibrated*.
 
+### Targets
+
+{: .note}
+> The equations are held in RAM only, on the blackboard, where `dose_task`
+> reads them too. After a reboot both sensors are back at the default, a
+> constant of 5.0.
+
+The target is split over two routes, because the dashboard only needs the
+value right now and polls it every 10 s, while the targets page needs the
+equations themselves.
+
+`GET /api/target` returns the current value of each sensor, like
+`/api/measurements`:
+
+```json
+{ "ph": 5.0, "ec": 1.2 }
+```
+
+A value is `null` if its equation cannot be evaluated. The value is computed on
+the device, because it depends on the device's own time.
+
+`GET /api/target/equation` returns the equation of each sensor, and
+`POST /api/target/equation` takes a json body of the same shape and answers
+`200` once it is accepted:
+
+```json
+{
+  "ph": { "constant": { "c": 5.5 } },
+  "ec": { "linear": { "m": 5.8e-7, "t": 1.2 } }
+}
+```
+
+An equation is the serialized `Equation` enum, tagged by its variant name in
+`snake_case`: `{ "constant": { "c": .. } }` or
+`{ "linear": { "m": .. , "t": .. } }`. The tag is a key of its own because the
+device parses json with `serde-json-core`, which cannot read internally tagged
+enums. A body that does not match is rejected with `400`.
+
+### Targets Page
+
+The page loads `/api/target/equation` and shows, for each sensor, a dropdown to
+pick the kind of equation and one field per parameter. Both sensors are saved
+with one *Save targets* button, which sends a single `POST`. A preview sketches
+both equations over the next 30 days. It is only a rough idea of the shape,
+drawn in the browser from the entered parameters.
+
+The device stores a linear equation as `y = m*x + t`, with `x` in seconds since
+boot. The page shows it in friendlier units, a *start value* (`t`) and a
+*change per day* (`m` times 86400), and converts back when saving.
+
 ### Dashboard
 
-The dashboard fetches `/api/measurements` on load and then every 10 s. A
-`null` value is shown as *Not calibrated*. If a request fails, the last
-values stay on screen. The *Dosing pump* and *Last reading* rows are static
-placeholders and not yet backed by data.
+The dashboard fetches `/api/measurements` and `/api/target` on load and then
+every 10 s. A `null` measurement is shown as *Not calibrated*. The *Targets*
+card shows the current target of each sensor and links to the targets page. If
+a request fails, the last values stay on screen.
 
 ### Related
 

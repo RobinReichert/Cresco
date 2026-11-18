@@ -78,8 +78,9 @@ A calibration is not applied when the second point is taken. The manager
 computes it into `FinishingEc`/`FinishingPh` and waits for `FinishCalibration`,
 which only then replaces the sensor's calibration and stores it. `Abort` in
 these states discards the computed calibration and keeps the old one. If the
-two points cannot be fitted, the manager reports `CalibrationFailed` and
-returns to `Idle` without entering the finishing state.
+two readings are identical, or the two reference values are, the manager
+reports `CalibrationFailed` and returns to `Idle` without entering the
+finishing state.
 
 `FirstMeasured`/`SecondMeasured` carry both the raw probe reading and the
 actual reference value the user provided (e.g. the pH of a buffer solution),

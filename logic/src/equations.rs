@@ -70,7 +70,7 @@ impl<'d> sequential_storage::map::Value<'d> for Equation {
 
 impl Equation {
     pub fn linear_from_points(first: Point, second: Point) -> Result<Self, ()> {
-        if second.x == first.x || second.y == first.y {
+        if second.x == first.x {
             return Err(());
         }
         let m = (second.y - first.y) / (second.x - first.x);
@@ -119,10 +119,13 @@ mod test {
     }
 
     #[test]
-    fn test_linear_from_points_same_y_errors() {
+    fn test_linear_from_points_same_y_is_flat_line() {
         let first = Point { x: 0.5, y: 5.0 };
         let second = Point { x: 1.0, y: 5.0 };
-        assert_eq!(Equation::linear_from_points(first, second), Err(()));
+        assert_eq!(
+            Equation::linear_from_points(first, second),
+            Ok(Equation::Linear { m: 0.0, t: 5.0 })
+        );
     }
 
     #[test]

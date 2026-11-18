@@ -30,10 +30,11 @@ let linear = Equation::linear_from_points(first, second)?;
 let y = linear.y(x)?;
 ```
 
-`linear_from_points` fails if the points share an `x` (vertical line) or a `y`
-(constant line). `y` returns a `Result`, so an equation that cannot be
-evaluated can report it. A sensor that is not calibrated yet is represented
-by the absence of an equation (`Option<Equation>`).
+`linear_from_points` fails if the points share an `x` (vertical line). Points
+that share a `y` give a flat line (`m = 0`). `y` returns a `Result`, so an
+equation that cannot be evaluated can report it. A sensor that is not
+calibrated yet is represented by the absence of an equation
+(`Option<Equation>`).
 
 The measurement module uses `linear_from_points` to fit a sensor's line
 through the two calibration points.

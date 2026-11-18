@@ -173,24 +173,31 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                match equations::Equation::linear_from_points(
-                    Point {
-                        y: actual_first,
-                        x: first,
-                    },
-                    Point {
-                        y: actual_second,
-                        x: second,
-                    },
-                ) {
-                    Ok(calibration) => {
-                        self.state = MeasurementState::FinishingEc { calibration };
-                        MeasurementAction::WaitForFinish
+                if actual_first == actual_second {
+                    self.state = MeasurementState::Idle;
+                    MeasurementAction::ShowError {
+                        error: MeasurementError::CalibrationFailed,
                     }
-                    Err(_) => {
-                        self.state = MeasurementState::Idle;
-                        MeasurementAction::ShowError {
-                            error: MeasurementError::CalibrationFailed,
+                } else {
+                    match equations::Equation::linear_from_points(
+                        Point {
+                            y: actual_first,
+                            x: first,
+                        },
+                        Point {
+                            y: actual_second,
+                            x: second,
+                        },
+                    ) {
+                        Ok(calibration) => {
+                            self.state = MeasurementState::FinishingEc { calibration };
+                            MeasurementAction::WaitForFinish
+                        }
+                        Err(_) => {
+                            self.state = MeasurementState::Idle;
+                            MeasurementAction::ShowError {
+                                error: MeasurementError::CalibrationFailed,
+                            }
                         }
                     }
                 }
@@ -245,24 +252,31 @@ impl MeasurementManager {
             ) => {
                 let first = *first;
                 let actual_first = *actual_first;
-                match equations::Equation::linear_from_points(
-                    Point {
-                        y: actual_first,
-                        x: first,
-                    },
-                    Point {
-                        y: actual_second,
-                        x: second,
-                    },
-                ) {
-                    Ok(calibration) => {
-                        self.state = MeasurementState::FinishingPh { calibration };
-                        MeasurementAction::WaitForFinish
+                if actual_first == actual_second {
+                    self.state = MeasurementState::Idle;
+                    MeasurementAction::ShowError {
+                        error: MeasurementError::CalibrationFailed,
                     }
-                    Err(_) => {
-                        self.state = MeasurementState::Idle;
-                        MeasurementAction::ShowError {
-                            error: MeasurementError::CalibrationFailed,
+                } else {
+                    match equations::Equation::linear_from_points(
+                        Point {
+                            y: actual_first,
+                            x: first,
+                        },
+                        Point {
+                            y: actual_second,
+                            x: second,
+                        },
+                    ) {
+                        Ok(calibration) => {
+                            self.state = MeasurementState::FinishingPh { calibration };
+                            MeasurementAction::WaitForFinish
+                        }
+                        Err(_) => {
+                            self.state = MeasurementState::Idle;
+                            MeasurementAction::ShowError {
+                                error: MeasurementError::CalibrationFailed,
+                            }
                         }
                     }
                 }
@@ -632,6 +646,26 @@ mod test {
     }
 
     #[test]
+    fn test_second_measured_fails_ec_calibration_when_actual_values_identical() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartEcCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 100.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 100.0,
+            }),
+            MeasurementAction::ShowError {
+                error: MeasurementError::CalibrationFailed,
+            }
+        );
+        assert!(manager.ec_calibration.is_none());
+    }
+
+    #[test]
     fn test_abort_during_ec_calibration_second_returns_to_idle() {
         let mut manager = started_manager();
         manager.handle_event(MeasurementEvent::StartEcCalibration);
@@ -717,6 +751,26 @@ mod test {
                 error: MeasurementError::CalibrationFailed,
             }
         );
+    }
+
+    #[test]
+    fn test_second_measured_fails_ph_calibration_when_actual_values_identical() {
+        let mut manager = started_manager();
+        manager.handle_event(MeasurementEvent::StartPhCalibration);
+        manager.handle_event(MeasurementEvent::FirstMeasured {
+            first: 0.0,
+            actual_first: 7.0,
+        });
+        assert_eq!(
+            manager.handle_event(MeasurementEvent::SecondMeasured {
+                second: 10.0,
+                actual_second: 7.0,
+            }),
+            MeasurementAction::ShowError {
+                error: MeasurementError::CalibrationFailed,
+            }
+        );
+        assert!(manager.ph_calibration.is_none());
     }
 
     #[test]

@@ -3,6 +3,7 @@ use crate::stepper::{Stepper, dummy::Dummy};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use embassy_time::{Duration, Instant, Timer};
 use logic::Float;
+use logic::equations::Equation;
 use logic::pid::PidController;
 
 pub type ConcreteStepper<'a> = Dummy<'a>;
@@ -20,6 +21,8 @@ pub async fn dose_task(
 ) {
     let mut ec_pid_controller = PidController::new(1.0, 1.0, 1.0);
     let mut ph_pid_controller = PidController::new(1.0, 1.0, 1.0);
+    let ec_target = Equation::Constant { c: 5.0 };
+    let ph_target = Equation::Constant { c: 5.0 };
     let mut next_period = Instant::now();
     loop {
         Timer::at(next_period).await;
@@ -30,7 +33,7 @@ pub async fn dose_task(
             (Some(ec), Some(ph)) => {
                 let ec_steps = ec_pid_controller.calculate(
                     ec,
-                    5.0,
+                    ec_target.y(Instant::now().as_secs()),
                     (timestamp / PERIOD_LENGTH.as_millis()) as usize,
                 ) * RATE;
                 if ec_steps > THRESHOLD {
@@ -40,7 +43,7 @@ pub async fn dose_task(
                 } else {
                     let ph_steps = ph_pid_controller.calculate(
                         ph,
-                        5.0,
+                        ph_target.y(Instant::now().as_secs()),
                         (timestamp / PERIOD_LENGTH.as_millis()) as usize,
                     ) * RATE;
                     if ph_steps.abs() > THRESHOLD {

@@ -146,9 +146,9 @@ page before that (cancel, back, reload, closing the tab) it sends `abort` with
 ### Targets
 
 {: .note}
-> The target routes are stubs. They always report a constant of 5.0 for both
-> sensors, the value `dose_task` uses, and `POST` accepts a body but neither
-> applies nor stores it.
+> The equations are held in RAM only, on the blackboard, where `dose_task`
+> reads them too. After a reboot both sensors are back at the default, a
+> constant of 5.0.
 
 The target is split over two routes, because the dashboard only needs the
 value right now and polls it every 10 s, while the targets page needs the

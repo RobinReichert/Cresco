@@ -1,11 +1,10 @@
+use crate::blackboard;
 use embassy_time::Instant;
-use logic::{Float, equations::Equation};
+use logic::{Float, blackboard::Targets, equations::Equation};
 use picoserve::{
     extract::Json as JsonBody,
     response::{IntoResponse, Json, StatusCode},
 };
-
-const STUB_TARGET: Equation = Equation::Constant { c: 5.0 };
 
 #[derive(serde::Serialize)]
 struct TargetValues {
@@ -13,31 +12,23 @@ struct TargetValues {
     ec: Option<Float>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Equations {
-    pub ph: Equation,
-    pub ec: Equation,
-}
-
 fn current(equation: Equation) -> Option<Float> {
     equation.y(Instant::now().as_secs() as Float).ok()
 }
 
 pub async fn target() -> impl IntoResponse {
+    let targets = blackboard::targets().await;
     Json(TargetValues {
-        ph: current(STUB_TARGET),
-        ec: current(STUB_TARGET),
+        ph: current(targets.ph),
+        ec: current(targets.ec),
     })
 }
 
 pub async fn equations() -> impl IntoResponse {
-    Json(Equations {
-        ph: STUB_TARGET,
-        ec: STUB_TARGET,
-    })
+    Json(blackboard::targets().await)
 }
 
-// Stub: the equations are accepted but not applied yet.
-pub async fn set_equations(JsonBody(_equations): JsonBody<Equations>) -> StatusCode {
+pub async fn set_equations(JsonBody(targets): JsonBody<Targets>) -> StatusCode {
+    blackboard::set_targets(targets).await;
     StatusCode::OK
 }

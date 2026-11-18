@@ -39,13 +39,15 @@ set of functions rather than the raw `static`:
 static MEASUREMENTS: Mutex<CriticalSectionRawMutex, Measurements> =
     Mutex::new(Measurements::DEFAULT);
 
-pub async fn snapshot() -> Measurements { MEASUREMENTS.lock().await.clone() }
+pub async fn measurements() -> Measurements {
+    MEASUREMENTS.lock().await.clone()
+}
 pub async fn set_ph(ph: Float) { MEASUREMENTS.lock().await.ph = ph }
 ```
 
-A reader calls `snapshot()` to copy out a coherent view of all facts at once;
-a writer uses a field setter. Routing every access through these functions is
-what keeps the locking rules below in one place.
+A reader calls `measurements()` to copy out a coherent view of all facts at
+once; a writer uses a field setter. Routing every access through these
+functions is what keeps the locking rules below in one place.
 
 ---
 
@@ -62,3 +64,13 @@ These conventions keep the shared state correct and contention-free:
 - **One mutex over the whole struct.** A single lock hands readers a
   *consistent* multi-field snapshot. Per-field locks are unnecessary and would
   tear that consistency.
+
+---
+
+## Targets
+
+Next to the measured facts, the blackboard holds the target equations the user
+chose, `Targets { ph, ec }`, in a second `Mutex`. `dose_task` reads them with
+`targets()` each period and the web server reads and replaces them with
+`targets()` and `set_targets()`. They start as a constant of 5.0 and are not
+stored in flash yet.

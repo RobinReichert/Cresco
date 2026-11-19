@@ -49,6 +49,7 @@ pub async fn dose_task(
                 );
                 if ec_steps > THRESHOLD {
                     debug!("dose: move ec pump by {} steps", ec_steps);
+                    debug!("dose: skip ph correction");
                     let _ = ec_pump.move_steps(ec_steps as isize).await;
                     let _ = ec_pump.release().await;
                     ph_pid_controller.reset();

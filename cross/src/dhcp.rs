@@ -1,3 +1,4 @@
+use defmt::trace;
 use embassy_net::{Stack, udp::PacketMetadata, udp::UdpSocket};
 use embassy_time::Instant;
 use logic::dhcp::{DhcpAction, DhcpServer, simple::SimpleDhcpServer};
@@ -25,6 +26,7 @@ pub async fn dhcp_task(stack: Stack<'static>) {
 
     loop {
         if let Ok((n, _)) = socket.recv_from(&mut in_buf).await {
+            trace!("dhcp receive {}", in_buf);
             let response = dhcp_logic.handle_message(&in_buf[..n], Instant::now().as_secs());
             if let DhcpAction::SendPacket {
                 payload,
@@ -33,6 +35,7 @@ pub async fn dhcp_task(stack: Stack<'static>) {
             } = response
             {
                 let remote_endpoint = (remote, 68);
+                trace!("dhcp respond {} to {}", payload, remote_endpoint);
                 let _ = socket.send_to(&payload[..len], remote_endpoint).await;
             }
         }

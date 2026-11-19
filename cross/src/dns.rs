@@ -1,4 +1,4 @@
-use defmt::{debug, info, trace};
+use defmt::{debug, info, trace, warn};
 use embassy_futures::select::{Either, select};
 use embassy_net::{
     IpAddress, Stack,
@@ -12,6 +12,7 @@ use logic::dns::{
 
 #[embassy_executor::task]
 pub async fn dns_task(stack: Stack<'static>) {
+    info!("dns poisoner: task start");
     let mut dns_server_logic = PoisonedDnsServer::new();
 
     let mut rx_meta = [PacketMetadata::EMPTY; 16];
@@ -54,6 +55,7 @@ pub async fn dns_task(stack: Stack<'static>) {
 
 #[embassy_executor::task]
 pub async fn mdns_task(stack: Stack<'static>) {
+    info!("mDns: task start");
     let mut mdns_server = MdnsServer::new();
 
     let mut rx_meta = [PacketMetadata::EMPTY; 16];

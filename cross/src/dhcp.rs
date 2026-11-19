@@ -5,6 +5,7 @@ use logic::dhcp::{DhcpAction, DhcpServer, simple::SimpleDhcpServer};
 
 #[embassy_executor::task]
 pub async fn dhcp_task(stack: Stack<'static>) {
+    info!("dhcp: task start");
     let mut dhcp_logic = SimpleDhcpServer::new();
 
     let mut rx_meta = [PacketMetadata::EMPTY; 16];

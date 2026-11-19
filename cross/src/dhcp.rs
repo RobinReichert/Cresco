@@ -1,4 +1,4 @@
-use defmt::{debug, trace};
+use defmt::{debug, info, trace};
 use embassy_net::{Stack, udp::PacketMetadata, udp::UdpSocket};
 use embassy_time::Instant;
 use logic::dhcp::{DhcpAction, DhcpServer, simple::SimpleDhcpServer};
@@ -20,14 +20,15 @@ pub async fn dhcp_task(stack: Stack<'static>) {
         &mut tx_buffer,
     );
 
-    debug!("bind dhcp socket to port 67");
-    socket.bind(67).expect("DHCP bind failed");
+    debug!("dhcp: bind socket to port 67");
+    socket.bind(67).expect("dhcp: bind failed");
 
     let mut in_buf = [0u8; 1024];
 
+    info!("dhcp: serve");
     loop {
         if let Ok((n, _)) = socket.recv_from(&mut in_buf).await {
-            trace!("dhcp receive {}", in_buf);
+            trace!("dhcp: receive {}", in_buf[..n]);
             let response = dhcp_logic.handle_message(&in_buf[..n], Instant::now().as_secs());
             if let DhcpAction::SendPacket {
                 payload,
@@ -36,8 +37,10 @@ pub async fn dhcp_task(stack: Stack<'static>) {
             } = response
             {
                 let remote_endpoint = (remote, 68);
-                trace!("dhcp respond {} to {}", payload, remote_endpoint);
+                trace!("dhcp: respond {} to {}", payload[..len], remote_endpoint);
                 let _ = socket.send_to(&payload[..len], remote_endpoint).await;
+            } else {
+                trace!("ignore request");
             }
         }
     }

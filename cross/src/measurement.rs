@@ -57,7 +57,6 @@ pub async fn measurement_task(
     loop {
         match manager.handle_event(event.take().expect("no event: this should not happen")) {
             MeasurementAction::WaitForNext => {
-                debug!("measurement: wait for next trigger");
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::StoreEcCalibration { calibration } => {
@@ -81,8 +80,8 @@ pub async fn measurement_task(
                         debug!("measurement: raw ec: {}", ec);
                         MeasurementEvent::EcMeasured { ec }
                     }
-                    Err(_) => {
-                        debug!("measurement: ec meaurement failed");
+                    Err(e) => {
+                        debug!("measurement: ec measurement failed: {}", e);
                         MeasurementEvent::Abort
                     }
                 })
@@ -94,8 +93,8 @@ pub async fn measurement_task(
                         debug!("measurement: raw ph: {}", ph);
                         MeasurementEvent::PhMeasured { ph }
                     }
-                    Err(_) => {
-                        debug!("measurement: ph meaurement failed");
+                    Err(e) => {
+                        debug!("measurement: ph measurement failed: {}", e);
                         MeasurementEvent::Abort
                     }
                 })
@@ -105,7 +104,6 @@ pub async fn measurement_task(
                 blackboard::set_ph(ph).await;
                 blackboard::set_ec(ec).await;
                 fresh.signal(Instant::now().as_millis());
-                debug!("measurement: wait for next trigger");
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::ShowError { error } => {
@@ -113,7 +111,6 @@ pub async fn measurement_task(
                     MeasurementError::NotCalibratedYet => MeasurementStatus::NotCalibratedYet,
                     MeasurementError::CalibrationFailed => MeasurementStatus::CalibrationFailed,
                 };
-                debug!("measurement: wait for next trigger");
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::RetrieveEcFirst => {
@@ -138,8 +135,8 @@ pub async fn measurement_task(
                                     actual_first: actual_ec,
                                 }
                             }
-                            Err(_) => {
-                                debug!("measurement: ec meaurement failed");
+                            Err(e) => {
+                                debug!("measurement: ec measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 debug!("measurement: abort calibration");
                                 MeasurementEvent::Abort
@@ -175,8 +172,8 @@ pub async fn measurement_task(
                                     actual_second: actual_ec,
                                 }
                             }
-                            Err(_) => {
-                                debug!("measurement: ec meaurement failed");
+                            Err(e) => {
+                                debug!("measurement: ec measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 debug!("measurement: abort calibration");
                                 MeasurementEvent::Abort
@@ -212,8 +209,8 @@ pub async fn measurement_task(
                                     actual_first: actual_ph,
                                 }
                             }
-                            Err(_) => {
-                                debug!("measurement: ph meaurement failed");
+                            Err(e) => {
+                                debug!("measurement: ph measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 debug!("measurement: abort calibration");
                                 MeasurementEvent::Abort
@@ -249,8 +246,8 @@ pub async fn measurement_task(
                                     actual_second: actual_ph,
                                 }
                             }
-                            Err(_) => {
-                                debug!("measurement: ph meaurement failed");
+                            Err(e) => {
+                                debug!("measurement: ph measurement failed: {:?}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
                                 debug!("measurement: abort calibration");
                                 MeasurementEvent::Abort
@@ -266,14 +263,14 @@ pub async fn measurement_task(
             }
             MeasurementAction::WaitForFinish => {
                 *status.lock().await = MeasurementStatus::CalibrationSucceeded;
-                debug!("measurement: wait for finish callibration command");
+                debug!("measurement: wait for finish calibration command");
                 event = Some(match commands.receive().await {
                     MeasurementCommand::FinishCalibration => {
                         debug!("measurement: finish calibration");
                         MeasurementEvent::FinishCalibration
                     }
                     _ => {
-                        debug!("measurement: different command then finish calibration received");
+                        debug!("measurement: different command than finish calibration received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
                         debug!("measurement: abort calibration");
                         MeasurementEvent::Abort
@@ -291,6 +288,7 @@ async fn next_trigger(
     commands: &'static Channel<CriticalSectionRawMutex, MeasurementCommand, 1>,
 ) -> MeasurementEvent {
     let deadline = Instant::now() + MEASUREMENT_PERIOD;
+    debug!("measurement: wait for next trigger");
     loop {
         match select(Timer::at(deadline), commands.receive()).await {
             Either::First(_) => return MeasurementEvent::StartMeasurement,

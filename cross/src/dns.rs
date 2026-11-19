@@ -28,10 +28,11 @@ pub async fn dns_task(stack: Stack<'static>) {
     );
 
     debug!("dns poisoner: bind socket to port 53");
-    socket.bind(53).expect("DNS bind failed");
+    socket.bind(53).expect("dns poisoner: bind failed");
 
     let mut in_buf = [0u8; 1024];
 
+    info!("dns poisoner: serve");
     loop {
         if let Ok((n, source)) = socket.recv_from(&mut in_buf).await {
             trace!("dns poisoner: receive {}", in_buf[..n]);
@@ -78,7 +79,8 @@ pub async fn mdns_task(stack: Stack<'static>) {
         debug!("mDns: connection established");
 
         if let Err(e) = stack.join_multicast_group(MDNS_GROUP) {
-            debug!("mDNS: join multicast group failed: {:?}", e);
+            warn!("mDns: join multicast group failed: {:?}", e);
+            continue;
         }
         info!("mDNS: serve, IP {:?}", stack.config_v4().map(|c| c.address));
 
@@ -113,6 +115,8 @@ pub async fn mdns_task(stack: Stack<'static>) {
             ) {
                 trace!("mDns: respond {} to {}", payload[..len], remote);
                 let _ = socket.send_to(&payload[..len], remote).await;
+            } else {
+                trace!("mDns: ignore request");
             }
         }
 

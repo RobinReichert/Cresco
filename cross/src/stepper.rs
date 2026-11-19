@@ -1,4 +1,5 @@
 use core::future;
+use defmt::{debug, info, trace};
 
 #[derive(Clone, Copy)]
 pub enum StepperState {
@@ -171,7 +172,7 @@ pub mod dummy {
         type Error = ();
 
         async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
-            defmt::info!("{}: move {} steps", self.name, steps);
+            info!("{}: move {} steps", self.name, steps);
             Ok(())
         }
 

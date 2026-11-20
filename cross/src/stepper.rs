@@ -1,4 +1,5 @@
 use core::future;
+use defmt::{debug, trace};
 
 #[derive(Clone, Copy)]
 pub enum StepperState {
@@ -85,6 +86,7 @@ pub mod drv8833 {
 
         fn set_state(&mut self) {
             let bits = self.current_step as u8;
+            trace!("stepper: set bits: {=u8:04b}", bits);
             for (i, pin) in self.pins.iter_mut().enumerate() {
                 let on = (bits >> (3 - i)) & 1 == 1;
                 pin.set_level(if on { Level::High } else { Level::Low });
@@ -97,6 +99,7 @@ pub mod drv8833 {
 
         async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
             let abs_steps = steps.abs();
+            debug!("stepper: move by {} steps", steps);
             for _ in 0..abs_steps {
                 if steps > 0 {
                     self.current_step.next();
@@ -107,6 +110,7 @@ pub mod drv8833 {
                 let _ = embassy_time::Timer::after_micros(1024).await;
             }
             if matches!(self.state(), StepperState::Idle) {
+                debug!("stepper: state is idle: release");
                 for pin in self.pins.iter_mut() {
                     pin.set_low();
                 }
@@ -115,12 +119,14 @@ pub mod drv8833 {
         }
 
         async fn hold(&mut self) -> Result<(), Self::Error> {
+            debug!("stepper: hold");
             self.set_state();
             self.state = StepperState::Holding;
             Ok(())
         }
 
         async fn release(&mut self) -> Result<(), Self::Error> {
+            debug!("stepper: release");
             for pin in self.pins.iter_mut() {
                 pin.set_low();
             }
@@ -166,7 +172,7 @@ pub mod dummy {
         type Error = ();
 
         async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
-            defmt::info!("{}: move {} steps", self.name, steps);
+            debug!("stepper: {}: move {} steps", self.name, steps);
             Ok(())
         }
 

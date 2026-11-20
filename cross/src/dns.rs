@@ -1,4 +1,4 @@
-use defmt::{info, warn};
+use defmt::{debug, info, trace, warn};
 use embassy_futures::select::{Either, select};
 use embassy_net::{
     IpAddress, Stack,
@@ -12,6 +12,7 @@ use logic::dns::{
 
 #[embassy_executor::task]
 pub async fn dns_task(stack: Stack<'static>) {
+    info!("dns poisoner: task start");
     let mut dns_server_logic = PoisonedDnsServer::new();
 
     let mut rx_meta = [PacketMetadata::EMPTY; 16];
@@ -27,12 +28,15 @@ pub async fn dns_task(stack: Stack<'static>) {
         &mut tx_buffer,
     );
 
-    socket.bind(53).expect("DNS bind failed");
+    debug!("dns poisoner: bind socket to port 53");
+    socket.bind(53).expect("dns poisoner: bind failed");
 
     let mut in_buf = [0u8; 1024];
 
+    info!("dns poisoner: serve");
     loop {
         if let Ok((n, source)) = socket.recv_from(&mut in_buf).await {
+            trace!("dns poisoner: receive {}", in_buf[..n]);
             let IpAddress::Ipv4(addr) = source.endpoint.addr;
             let response =
                 dns_server_logic.handle_message(&in_buf[..n], (addr, source.endpoint.port));
@@ -42,6 +46,7 @@ pub async fn dns_task(stack: Stack<'static>) {
                 remote,
             } = response
             {
+                trace!("dns poisoner: respond {} to {}", payload[..len], remote);
                 let _ = socket.send_to(&payload[..len], remote).await;
             }
         }
@@ -50,6 +55,7 @@ pub async fn dns_task(stack: Stack<'static>) {
 
 #[embassy_executor::task]
 pub async fn mdns_task(stack: Stack<'static>) {
+    info!("mDns: task start");
     let mut mdns_server = MdnsServer::new();
 
     let mut rx_meta = [PacketMetadata::EMPTY; 16];
@@ -65,29 +71,37 @@ pub async fn mdns_task(stack: Stack<'static>) {
         &mut tx_meta,
         &mut tx_buffer,
     );
+
+    debug!("mDns: bind socket to port {}", MDNS_PORT);
     socket.bind(MDNS_PORT).expect("mDNS bind failed");
 
     loop {
+        debug!("mDns: wait for connection");
         stack.wait_config_up().await;
+        debug!("mDns: connection established");
 
         if let Err(e) = stack.join_multicast_group(MDNS_GROUP) {
-            warn!("mDNS: joining multicast group failed: {:?}", e);
+            warn!("mDns: join multicast group failed: {:?}", e);
+            continue;
         }
-        info!(
-            "mDNS: serving, IP {:?}",
-            stack.config_v4().map(|c| c.address)
-        );
+        info!("mDNS: serve, IP {:?}", stack.config_v4().map(|c| c.address));
 
         loop {
             let event = select(socket.recv_from(&mut in_buf), stack.wait_config_down()).await;
 
             let (n, source) = match event {
                 Either::First(Ok((n, remote))) => (n, remote),
-                Either::First(Err(_)) => continue,
+                Either::First(Err(e)) => {
+                    warn!("mDns: recv_from failed: {}", e);
+                    continue;
+                }
                 Either::Second(()) => break,
             };
 
+            trace!("mDns: receive: {}", in_buf[..n]);
+
             let Some(config) = stack.config_v4() else {
+                debug!("mDns: find IP address failed");
                 continue;
             };
 
@@ -101,10 +115,13 @@ pub async fn mdns_task(stack: Stack<'static>) {
                 config.address.address(),
                 (addr, source.endpoint.port),
             ) {
+                trace!("mDns: respond {} to {}", payload[..len], remote);
                 let _ = socket.send_to(&payload[..len], remote).await;
+            } else {
+                trace!("mDns: ignore request");
             }
         }
 
-        info!("mDNS: STA address lost, waiting for reconnect");
+        info!("mDNS: connection lost");
     }
 }

@@ -1,5 +1,4 @@
 use core::net::Ipv4Addr;
-use defmt::info;
 use smoltcp::wire::{DhcpPacket, DhcpRepr};
 
 pub enum DhcpAction {
@@ -137,7 +136,6 @@ pub mod simple {
             mac: discover_message.client_hardware_address.0,
             timestamp: time,
         };
-        info!("received discover. sending offer");
         (action, new_state)
     }
 
@@ -172,7 +170,6 @@ pub mod simple {
             mac: mac,
             timestamp: time,
         };
-        info!("received request. sending ack: {:?}", ack);
         (action, new_state)
     }
 
@@ -182,10 +179,8 @@ pub mod simple {
         previous_time: u64,
     ) -> (DhcpAction, SimpleDhcpState) {
         let new_state = if release_message.client_hardware_address.as_bytes() == mac {
-            info!("received release from client, transitioning to idle");
             SimpleDhcpState::Idle
         } else {
-            info!("received release from invalid address");
             SimpleDhcpState::Bound {
                 mac: mac,
                 timestamp: previous_time,
@@ -202,7 +197,6 @@ pub mod simple {
     ) -> (DhcpAction, SimpleDhcpState) {
         let (response, new_timestamp, remote) =
             if request_message.client_hardware_address.as_bytes() == mac {
-                info!("extending lease duration");
                 let remote = if request_message.client_ip.is_unspecified() {
                     Ipv4Addr::BROADCAST
                 } else {
@@ -214,7 +208,6 @@ pub mod simple {
                     remote,
                 )
             } else {
-                info!("received invalid request");
                 (
                     new_repr(DhcpMessageType::Nak, request_message.clone()),
                     previous_time,
@@ -248,7 +241,6 @@ pub mod simple {
     ) -> (DhcpAction, SimpleDhcpState) {
         let same_client = discover_message.client_hardware_address.as_bytes() == mac;
         if !same_client && time < previous_time + (LEASE_DURATION as u64) {
-            info!("ip is already leased");
             return (DhcpAction::Ignore, current);
         }
         let offer = new_repr(DhcpMessageType::Offer, discover_message.clone());
@@ -268,11 +260,6 @@ pub mod simple {
             mac: discover_message.client_hardware_address.0,
             timestamp: time,
         };
-        if same_client {
-            info!("received rediscover from same client. sending offer again");
-        } else {
-            info!("ip lease duration has expired. leasing to new device");
-        }
         (action, new_state)
     }
 

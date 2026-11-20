@@ -2,7 +2,7 @@
 runner = "probe-rs run --chip esp32c3 --idf-partition-table ../partitions.csv"
 
 [env]
-DEFMT_LOG="info,picoserve=error"
+DEFMT_LOG="info,cross=debug,picoserve=error"
 
 [build]
 rustflags = [

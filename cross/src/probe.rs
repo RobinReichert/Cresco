@@ -1,3 +1,4 @@
+use defmt::trace;
 use esp_hal::analog::adc::AdcChannel;
 use logic::Float;
 
@@ -19,8 +20,9 @@ impl<'a, PIN: AdcChannel> AnalogProbe<'a, PIN> {
         let mut sum: u32 = 0;
         let mut min = u16::MAX;
         let mut max = 0;
-        for _ in 0..SAMPLES {
+        for i in 0..SAMPLES {
             let v = self.adc.read_oneshot(&mut self.pin).await;
+            trace!("value {}/{}: {}", i, SAMPLES, v);
             sum += v as u32;
             min = min.min(v);
             max = max.max(v);

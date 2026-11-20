@@ -1,4 +1,5 @@
 use crate::web::{captive_app::CaptiveApp, cresco_app::CrescoApp};
+use defmt::info;
 use embassy_time::Duration;
 use picoserve::{self, AppRouter, Config, Timeouts};
 
@@ -25,6 +26,7 @@ pub async fn captive_web_task(
     stack: embassy_net::Stack<'static>,
     app: &'static AppRouter<CaptiveApp<'static>>,
 ) {
+    info!("captive app: task start");
     let mut tcp_rx_buffer = [0; 1024];
     let mut tcp_tx_buffer = [0; 1024];
     let mut http_buffer = [0; 2048];
@@ -41,6 +43,7 @@ pub async fn cresco_web_task(
     stack: embassy_net::Stack<'static>,
     app: &'static AppRouter<CrescoApp>,
 ) {
+    info!("cresco app: task start");
     let mut tcp_rx_buffer = [0; 1024];
     let mut tcp_tx_buffer = [0; 1024];
     let mut http_buffer = [0; 2048];

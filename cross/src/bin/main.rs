@@ -73,7 +73,7 @@ async fn main(spawner: Spawner) -> ! {
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
 
-    info!("Embassy initialized!");
+    info!("main: Embassy initialized!");
 
     let radio_init = &*mk_static!(
         esp_radio::Controller<'static>,

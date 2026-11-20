@@ -1,4 +1,4 @@
-use defmt::info;
+use defmt::{debug, error, info, trace, warn};
 use embassy_executor::Spawner;
 use embassy_futures::select::{Either3, select, select3};
 use embassy_net::{Ipv4Cidr, Runner, Stack, StackResources, StaticConfigV4};
@@ -31,11 +31,12 @@ pub async fn start_wifi(
     rng: Rng,
     spawner: &Spawner,
 ) -> (WifiController<'static>, Stack<'static>, Stack<'static>) {
+    debug!("wifi: initialize wifi controller");
     let (wifi_controller, interfaces) = esp_radio::wifi::new(radio_init, wifi, Default::default())
-        .expect("Failed to initialize Wi-Fi controller");
+        .expect("wifi: initialize Wi-Fi controller failed");
 
     event::StaDisconnected::update_handler(|event| {
-        defmt::warn!("STA disconnected, reason = {}", event.reason());
+        warn!("wifi: station disconnected: {}", event.reason());
     });
 
     let ip_addr = Ipv4Cidr::new(SERVER_IP, 24);
@@ -71,26 +72,30 @@ pub async fn connection(
     credentials: &'static Signal<CriticalSectionRawMutex, LoginData>,
     storage: &'static ConcreteStorage,
 ) {
-    info!("connection task started");
+    info!("wifi connection: start task");
     let mut c = SimpleWifiManager::new();
     let mut event: Option<logic::wifi::WifiEvent> = Some(logic::wifi::WifiEvent::Start);
     loop {
-        match c.handle_event(event.take().expect("no event: this should not happen")) {
+        match c.handle_event(
+            event
+                .take()
+                .expect("wifi connection: no event: this should not happen"),
+        ) {
             logic::wifi::WifiAction::RetrieveCredentials => {
-                info!("retrieving credentials");
+                debug!("wifi connection: retrieve credentials");
                 event = match storage.get_credentials().await {
                     Ok(credentials) => {
-                        info!("found credentials");
+                        debug!("wifi connection: retrieve credentials successfull");
                         Some(logic::wifi::WifiEvent::CredentialsFound { credentials })
                     }
-                    Err(_) => {
-                        info!("did not find credentials");
+                    Err(e) => {
+                        debug!("wifi connection: retrieve credentials failed: {}", e);
                         Some(logic::wifi::WifiEvent::CredentialsMissing)
                     }
                 };
             }
             logic::wifi::WifiAction::WaitForCredentials => {
-                info!("starting ap sta");
+                debug!("wifi connection: start ap sta");
                 let _ = controller.stop_async().await;
                 let config = ModeConfig::ApSta(
                     ClientConfig::default(),
@@ -100,16 +105,18 @@ pub async fn connection(
                 let _ = controller.start_async().await;
                 let deadline = Instant::now() + Duration::from_secs(60);
                 loop {
+                    debug!("wifi connection: wait for credentials");
                     let timeout = Timer::at(deadline);
                     match select3(credentials.wait(), Timer::after_secs(14), timeout).await {
                         Either3::First(cred) => {
-                            info!("received credentials");
+                            debug!("wifi connection: received credentials");
                             event = Some(logic::wifi::WifiEvent::CredentialsReceived {
                                 credentials: cred,
                             });
                             break;
                         }
                         Either3::Second(_) => {
+                            debug!("wifi connection: scan available networks");
                             if let Ok(networks) = controller
                                 .scan_with_config_async(ScanConfig::default().with_max(20))
                                 .await
@@ -121,17 +128,18 @@ pub async fn connection(
                                     if let Ok(s) = String::try_from(ap.ssid.as_str())
                                         && distinct_ssid_count < MAX_SSID_COUNT
                                     {
+                                        trace!("wifi connection: found network: {}", s);
                                         if !list.contains(&s) {
                                             let _ = list.push(s);
                                             distinct_ssid_count += 1;
                                         }
                                     }
                                 }
-                                info!("found {} networks", list.len());
+                                debug!("wifi network: found {} networks", list.len());
                             }
                         }
                         Either3::Third(_) => {
-                            info!("retrying to get credentials");
+                            debug!("wifi network: retry to get credentials");
                             event = Some(logic::wifi::WifiEvent::Timeout);
                             break;
                         }
@@ -139,7 +147,7 @@ pub async fn connection(
                 }
             }
             logic::wifi::WifiAction::EstablishConnection { credentials } => {
-                info!("starting client");
+                debug!("wifi connection: start client");
                 let LoginData { ssid, password } = credentials.clone();
                 let _ = controller.stop_async().await;
                 let config = ModeConfig::Client(
@@ -152,27 +160,28 @@ pub async fn connection(
                 select(controller.connect_async(), Timer::after_secs(5)).await;
                 match sta_state() {
                     WifiStaState::Connected => {
-                        info!("connected");
+                        debug!("wifi connection: connect successfull");
+                        debug!("wifi connection: store credentials");
                         if !storage.set_credentials(credentials).await {
-                            info!("failed to store credentials");
+                            debug!("wifi connection: store credentials failed");
                         }
                         event = Some(logic::wifi::WifiEvent::ConnectionEstablished);
                     }
                     _ => {
-                        info!("failed client connection");
+                        debug!("wifi connection: client connection failed");
                         event = Some(logic::wifi::WifiEvent::ConnectionNotEstablished);
                         Timer::after_secs(3).await;
                     }
                 }
             }
             logic::wifi::WifiAction::WaitForDisconnect => {
-                info!("waiting for disconnect");
+                debug!("wifi connection: wait for disconnect");
                 controller.wait_for_event(WifiEvent::StaDisconnected).await;
                 event = Some(logic::wifi::WifiEvent::Disconnected);
-                info!("disconnect");
+                debug!("wifi connection: disconnect successfull");
             }
             logic::wifi::WifiAction::Ignore => {
-                info!("something went wrong")
+                error!("wifi connection: this should not happen")
             }
         }
     }
@@ -180,5 +189,6 @@ pub async fn connection(
 
 #[embassy_executor::task(pool_size = 2)]
 async fn net_task(mut runner: Runner<'static, WifiDevice<'static>>) -> ! {
+    debug!("net: start task");
     runner.run().await
 }

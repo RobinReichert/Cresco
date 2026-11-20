@@ -172,7 +172,7 @@ pub mod dummy {
         type Error = ();
 
         async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
-            info!("{}: move {} steps", self.name, steps);
+            info!("stepper: {}: move {} steps", self.name, steps);
             Ok(())
         }
 

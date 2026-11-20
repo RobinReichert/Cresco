@@ -15,7 +15,7 @@ use cross::{
     mk_static,
     probe::AnalogProbe,
     shared_adc::{AdcBuilder, AdcInterface, SharedAdc},
-    stepper::{Stepper, dummy::Dummy},
+    stepper::{Stepper, tmc2209::Tmc2209},
     storage::{ConcreteStorage, Storage},
     web::{
         self,
@@ -134,10 +134,9 @@ async fn main(spawner: Spawner) -> ! {
         spawner.must_spawn(web::cresco_web_task(task_id, sta_stack, cresco_app));
     }
 
-    // dummy pumps until the real driver exists
-    let mut ec_pump = Dummy::new("ec", 200);
-    let mut ph_up_pump = Dummy::new("ph up", 200);
-    let mut ph_down_pump = Dummy::new("ph down", 200);
+    let mut ec_pump = Tmc2209::new(peripherals.GPIO2, 200);
+    let mut ph_up_pump = Tmc2209::new(peripherals.GPIO3, 200);
+    let mut ph_down_pump = Tmc2209::new(peripherals.GPIO4, 200);
     let _ = ec_pump.release().await;
     let _ = ph_up_pump.release().await;
     let _ = ph_down_pump.release().await;

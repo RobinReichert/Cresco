@@ -1,12 +1,13 @@
 use crate::blackboard;
-use crate::stepper::{Stepper, dummy::Dummy};
+use crate::stepper::Stepper;
+use crate::stepper::tmc2209::Tmc2209;
 use defmt::{debug, info};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use embassy_time::{Duration, Instant, Timer};
 use logic::Float;
 use logic::pid::PidController;
 
-pub type ConcreteStepper<'a> = Dummy<'a>;
+pub type ConcreteStepper<'a> = Tmc2209<'a>;
 
 const PERIOD_LENGTH: Duration = Duration::from_secs(60);
 const THRESHOLD: Float = 1.0;

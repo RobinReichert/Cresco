@@ -186,9 +186,9 @@ pub mod tmc2209 {
             self.enable_out.set_low();
             for _ in 0..steps {
                 self.step_out.set_high();
-                let _ = embassy_time::Timer::after_millis(1).await;
+                let _ = embassy_time::Timer::after_micros(256).await;
                 self.step_out.set_low();
-                let _ = embassy_time::Timer::after_millis(1).await;
+                let _ = embassy_time::Timer::after_micros(256).await;
             }
             if matches!(self.state, StepperState::Idle) {
                 self.enable_out.set_high();

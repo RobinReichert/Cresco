@@ -1,6 +1,6 @@
 use crate::storage::ConcreteStorage;
 use crate::{blackboard, probe::AnalogProbe};
-use defmt::{debug, info, panic};
+use defmt::{debug, info, panic, warn};
 use embassy_futures::select::{Either, select};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, mutex::Mutex, signal::Signal,
@@ -60,16 +60,16 @@ pub async fn measurement_task(
                 event = Some(next_trigger(commands).await);
             }
             MeasurementAction::StoreEcCalibration { calibration } => {
-                debug!("measurement: store ec calibration");
+                info!("measurement: store ec calibration");
                 if !storage.set_ec_calibration(calibration).await {
-                    debug!("measurement: store ec calibration failed");
+                    warn!("measurement: store ec calibration failed");
                 }
                 event = Some(MeasurementEvent::CalibrationStored);
             }
             MeasurementAction::StorePhCalibration { calibration } => {
-                debug!("measurement: store ph calibration");
+                info!("measurement: store ph calibration");
                 if !storage.set_ph_calibration(calibration).await {
-                    debug!("measurement: store ph calibration failed");
+                    warn!("measurement: store ph calibration failed");
                 }
                 event = Some(MeasurementEvent::CalibrationStored);
             }
@@ -81,7 +81,7 @@ pub async fn measurement_task(
                         MeasurementEvent::EcMeasured { ec }
                     }
                     Err(e) => {
-                        debug!("measurement: ec measurement failed: {}", e);
+                        warn!("measurement: ec measurement failed: {}", e);
                         MeasurementEvent::Abort
                     }
                 })
@@ -94,13 +94,13 @@ pub async fn measurement_task(
                         MeasurementEvent::PhMeasured { ph }
                     }
                     Err(e) => {
-                        debug!("measurement: ph measurement failed: {}", e);
+                        warn!("measurement: ph measurement failed: {}", e);
                         MeasurementEvent::Abort
                     }
                 })
             }
             MeasurementAction::WriteMeasurements { ec, ph } => {
-                debug!("measurement: write ph: {} and ec: {} to blackboard", ph, ec);
+                info!("measurement: write ph: {} and ec: {} to blackboard", ph, ec);
                 blackboard::set_ph(ph).await;
                 blackboard::set_ec(ec).await;
                 fresh.signal(Instant::now().as_millis());
@@ -126,7 +126,7 @@ pub async fn measurement_task(
                         );
                         match ec_probe.read().await {
                             Ok(ec) => {
-                                debug!(
+                                info!(
                                     "measurement: raw ec corresponding to actual ec: {} is: {}",
                                     actual_ec, ec
                                 );
@@ -136,16 +136,16 @@ pub async fn measurement_task(
                                 }
                             }
                             Err(e) => {
-                                debug!("measurement: ec measurement failed: {}", e);
+                                warn!("measurement: ec measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
-                                debug!("measurement: abort calibration");
+                                info!("measurement: abort calibration");
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
                         debug!("measurement: non ec value received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
-                        debug!("measurement: abort calibration");
+                        info!("measurement: abort calibration");
                         MeasurementEvent::Abort
                     },
                 )
@@ -163,7 +163,7 @@ pub async fn measurement_task(
                         );
                         match ec_probe.read().await {
                             Ok(ec) => {
-                                debug!(
+                                info!(
                                     "measurement: raw ec corresponding to actual ec: {} is: {}",
                                     actual_ec, ec
                                 );
@@ -173,16 +173,16 @@ pub async fn measurement_task(
                                 }
                             }
                             Err(e) => {
-                                debug!("measurement: ec measurement failed: {}", e);
+                                warn!("measurement: ec measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
-                                debug!("measurement: abort calibration");
+                                info!("measurement: abort calibration");
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
                         debug!("measurement: non ec value received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
-                        debug!("measurement: abort calibration");
+                        info!("measurement: abort calibration");
                         MeasurementEvent::Abort
                     },
                 )
@@ -200,7 +200,7 @@ pub async fn measurement_task(
                         );
                         match ph_probe.read().await {
                             Ok(ph) => {
-                                debug!(
+                                info!(
                                     "measurement: raw ph corresponding to actual ph: {} is: {}",
                                     actual_ph, ph
                                 );
@@ -210,16 +210,16 @@ pub async fn measurement_task(
                                 }
                             }
                             Err(e) => {
-                                debug!("measurement: ph measurement failed: {}", e);
+                                warn!("measurement: ph measurement failed: {}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
-                                debug!("measurement: abort calibration");
+                                info!("measurement: abort calibration");
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
                         debug!("measurement: non ph value received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
-                        debug!("measurement: abort calibration");
+                        info!("measurement: abort calibration");
                         MeasurementEvent::Abort
                     },
                 )
@@ -237,7 +237,7 @@ pub async fn measurement_task(
                         );
                         match ph_probe.read().await {
                             Ok(ph) => {
-                                debug!(
+                                info!(
                                     "measurement: raw ph corresponding to actual ph: {} is: {}",
                                     actual_ph, ph
                                 );
@@ -247,16 +247,16 @@ pub async fn measurement_task(
                                 }
                             }
                             Err(e) => {
-                                debug!("measurement: ph measurement failed: {:?}", e);
+                                warn!("measurement: ph measurement failed: {:?}", e);
                                 *status.lock().await = MeasurementStatus::ProbeReadFailed;
-                                debug!("measurement: abort calibration");
+                                info!("measurement: abort calibration");
                                 MeasurementEvent::Abort
                             }
                         }
                     } else {
                         debug!("measurement: non ph value received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
-                        debug!("measurement: abort calibration");
+                        info!("measurement: abort calibration");
                         MeasurementEvent::Abort
                     },
                 )
@@ -266,13 +266,13 @@ pub async fn measurement_task(
                 debug!("measurement: wait for finish calibration command");
                 event = Some(match commands.receive().await {
                     MeasurementCommand::FinishCalibration => {
-                        debug!("measurement: finish calibration");
+                        info!("measurement: finish calibration");
                         MeasurementEvent::FinishCalibration
                     }
                     _ => {
                         debug!("measurement: different command than finish calibration received");
                         *status.lock().await = MeasurementStatus::CalibrationAborted;
-                        debug!("measurement: abort calibration");
+                        info!("measurement: abort calibration");
                         MeasurementEvent::Abort
                     }
                 });
@@ -299,7 +299,7 @@ async fn next_trigger(
                 return MeasurementEvent::StartPhCalibration;
             }
             Either::Second(MeasurementCommand::Abort) => return MeasurementEvent::Abort,
-            Either::Second(_) => info!("something went wrong"),
+            Either::Second(_) => warn!("something went wrong"),
         }
     }
 }

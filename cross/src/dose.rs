@@ -48,7 +48,7 @@ pub async fn dose_task(
                     ec_steps, ec, ec_target
                 );
                 if ec_steps > THRESHOLD {
-                    debug!("dose: move ec pump by {} steps", ec_steps);
+                    info!("dose: move ec pump by {} steps", ec_steps);
                     debug!("dose: skip ph correction");
                     let _ = ec_pump.move_steps(ec_steps as isize).await;
                     let _ = ec_pump.release().await;
@@ -73,11 +73,11 @@ pub async fn dose_task(
                     );
                     if ph_steps.abs() > THRESHOLD {
                         if ph_steps > 0.0 {
-                            debug!("dose: move ph up pump by {} steps", ph_steps.abs());
+                            info!("dose: move ph up pump by {} steps", ph_steps.abs());
                             let _ = ph_up_pump.move_steps(ph_steps.abs() as isize).await;
                             let _ = ph_up_pump.release().await;
                         } else {
-                            debug!("dose: move ph down pump by {} steps", ph_steps.abs());
+                            info!("dose: move ph down pump by {} steps", ph_steps.abs());
                             let _ = ph_down_pump.move_steps(ph_steps.abs() as isize).await;
                             let _ = ph_down_pump.release().await;
                         };

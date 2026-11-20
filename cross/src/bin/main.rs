@@ -25,7 +25,7 @@ use cross::{
     },
     wifi::{self, connection},
 };
-use defmt::debug;
+use defmt::info;
 use defmt_rtt as _;
 use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_executor::Spawner;
@@ -73,7 +73,7 @@ async fn main(spawner: Spawner) -> ! {
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
 
-    debug!("main: Embassy initialized!");
+    info!("main: Embassy initialized!");
 
     let radio_init = &*mk_static!(
         esp_radio::Controller<'static>,

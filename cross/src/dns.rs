@@ -92,7 +92,7 @@ pub async fn mdns_task(stack: Stack<'static>) {
             let (n, source) = match event {
                 Either::First(Ok((n, remote))) => (n, remote),
                 Either::First(Err(e)) => {
-                    trace!("mDns: recv_from failed: {}", e);
+                    warn!("mDns: recv_from failed: {}", e);
                     continue;
                 }
                 Either::Second(()) => break,
@@ -122,6 +122,6 @@ pub async fn mdns_task(stack: Stack<'static>) {
             }
         }
 
-        debug!("mDNS: connection lost");
+        info!("mDNS: connection lost");
     }
 }

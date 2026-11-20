@@ -21,8 +21,8 @@ pub async fn dose_task(
     fresh: &'static Signal<CriticalSectionRawMutex, u64>,
 ) {
     info!("dose: task start");
-    let mut ec_pid_controller = PidController::new(1.0, 1.0, 1.0);
-    let mut ph_pid_controller = PidController::new(1.0, 1.0, 1.0);
+    let mut ec_pid_controller = PidController::new(0.8, 0.1, 1.0);
+    let mut ph_pid_controller = PidController::new(0.8, 0.1, 1.0);
     let mut next_period = Instant::now();
     loop {
         Timer::at(next_period).await;

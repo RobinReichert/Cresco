@@ -299,7 +299,7 @@ async fn next_trigger(
                 return MeasurementEvent::StartPhCalibration;
             }
             Either::Second(MeasurementCommand::Abort) => return MeasurementEvent::Abort,
-            Either::Second(_) => warn!("something went wrong"),
+            Either::Second(_) => warn!("measurement: something went wrong"),
         }
     }
 }

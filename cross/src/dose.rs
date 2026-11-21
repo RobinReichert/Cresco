@@ -9,9 +9,9 @@ use logic::pid::PidController;
 
 pub type ConcreteStepper<'a> = Tmc2209<'a>;
 
-const PERIOD_LENGTH: Duration = Duration::from_secs(60);
-const THRESHOLD: Float = 1.0;
-const RATE: Float = 100.0;
+const PERIOD_LENGTH: Duration = Duration::from_secs(150);
+const THRESHOLD: Float = 12_500.0;
+const RATE: Float = 1_000_000.0;
 
 #[embassy_executor::task]
 pub async fn dose_task(
@@ -21,7 +21,7 @@ pub async fn dose_task(
     fresh: &'static Signal<CriticalSectionRawMutex, u64>,
 ) {
     info!("dose: task start");
-    let mut ec_pid_controller = PidController::new(0.8, 0.1, 1.0);
+    let mut ec_pid_controller = PidController::new(1.0, 0.0, 0.0);
     let mut ph_pid_controller = PidController::new(0.8, 0.1, 1.0);
     let mut next_period = Instant::now();
     loop {

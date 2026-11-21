@@ -135,6 +135,7 @@ async fn main(spawner: Spawner) -> ! {
         AppRouter<CrescoApp>,
         CrescoApp {
             calibration: CalibrationState { commands, status },
+            storage,
         }
         .build_app()
     );

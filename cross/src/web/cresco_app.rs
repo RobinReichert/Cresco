@@ -1,12 +1,16 @@
-use crate::web::{
-    pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS, TARGETS_HTML},
-    services::{
-        calibration::{self, CalibrationState},
-        measurements, targets,
+use crate::{
+    storage::ConcreteStorage,
+    web::{
+        pages::{CALIBRATE_HTML, DASHBOARD_HTML, PLANT_WEBP, STYLE_CSS, TARGETS_HTML},
+        services::{
+            calibration::{self, CalibrationState},
+            measurements, targets,
+        },
     },
 };
 use picoserve::{
     self, AppBuilder,
+    extract::FromRef,
     response::{File, StatusCode},
     routing::{get, get_service, post},
 };
@@ -29,6 +33,25 @@ async fn targets_page() -> impl picoserve::response::IntoResponse {
 
 pub struct CrescoApp {
     pub calibration: CalibrationState,
+    pub storage: &'static ConcreteStorage,
+}
+
+#[derive(Clone, Copy)]
+pub struct AppState {
+    calibration: CalibrationState,
+    storage: &'static ConcreteStorage,
+}
+
+impl FromRef<AppState> for CalibrationState {
+    fn from_ref(state: &AppState) -> Self {
+        state.calibration
+    }
+}
+
+impl FromRef<AppState> for &'static ConcreteStorage {
+    fn from_ref(state: &AppState) -> Self {
+        state.storage
+    }
 }
 
 impl AppBuilder for CrescoApp {
@@ -65,6 +88,9 @@ impl AppBuilder for CrescoApp {
             .route("/api/calibration/point", post(calibration::point))
             .route("/api/calibration/finish", post(calibration::finish))
             .route("/api/calibration/abort", post(calibration::abort))
-            .with_state(self.calibration)
+            .with_state(AppState {
+                calibration: self.calibration,
+                storage: self.storage,
+            })
     }
 }

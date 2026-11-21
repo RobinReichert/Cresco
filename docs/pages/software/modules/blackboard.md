@@ -72,5 +72,7 @@ These conventions keep the shared state correct and contention-free:
 Next to the measured facts, the blackboard holds the target equations the user
 chose, `Targets { ph, ec }`, in a second `Mutex`. `dose_task` reads them with
 `targets()` each period and the web server reads and replaces them with
-`targets()` and `set_targets()`. They start as a constant of 5.0 and are not
-stored in flash yet.
+`targets()` and `set_targets()`. They start as a constant of 5.0 until
+the stored targets are loaded at boot. When the web server replaces them, it
+also writes them to flash, so they survive a restart. If nothing is stored yet,
+the constant stays.

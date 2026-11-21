@@ -17,6 +17,8 @@ pub type KeyType = u32;
 const CREDENTIALS_KEY: KeyType = 0;
 const PH_CALIBRATION_KEY: KeyType = 1;
 const EC_CALIBRATION_KEY: KeyType = 2;
+const EC_TARGET_KEY: KeyType = 3;
+const PH_TARGET_KEY: KeyType = 4;
 const MAX_PASSWORD_LEN: usize = 64;
 const MAX_SSID_LEN: usize = 32;
 const HEADER_BYTES: usize = 1;
@@ -143,6 +145,50 @@ where
             .fetch_item(&mut data_buffer, &EC_CALIBRATION_KEY)
             .await;
         log_fetch("ec calibration", result)
+    }
+
+    pub async fn set_ec_target(&self, target: equations::Equation) -> bool {
+        let mut data_buffer = [0u8; BUFFER_SIZE];
+        let result = self
+            .storage
+            .lock()
+            .await
+            .store_item(&mut data_buffer, &EC_TARGET_KEY, &target)
+            .await;
+        log_store("ec target", result)
+    }
+
+    pub async fn get_ec_target(&self) -> Result<equations::Equation, ()> {
+        let mut data_buffer = [0u8; BUFFER_SIZE];
+        let result = self
+            .storage
+            .lock()
+            .await
+            .fetch_item(&mut data_buffer, &EC_TARGET_KEY)
+            .await;
+        log_fetch("ec target", result)
+    }
+
+    pub async fn set_ph_target(&self, target: equations::Equation) -> bool {
+        let mut data_buffer = [0u8; BUFFER_SIZE];
+        let result = self
+            .storage
+            .lock()
+            .await
+            .store_item(&mut data_buffer, &PH_TARGET_KEY, &target)
+            .await;
+        log_store("ph target", result)
+    }
+
+    pub async fn get_ph_target(&self) -> Result<equations::Equation, ()> {
+        let mut data_buffer = [0u8; BUFFER_SIZE];
+        let result = self
+            .storage
+            .lock()
+            .await
+            .fetch_item(&mut data_buffer, &PH_TARGET_KEY)
+            .await;
+        log_fetch("ph target", result)
     }
 }
 

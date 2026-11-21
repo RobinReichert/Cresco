@@ -8,6 +8,7 @@
 #![deny(clippy::large_stack_frames)]
 
 use cross::{
+    blackboard,
     dhcp::dhcp_task,
     dns::{dns_task, mdns_task},
     dose::dose_task,
@@ -38,7 +39,7 @@ use esp_hal::rng::Rng;
 use esp_hal::timer::timg::TimerGroup;
 use esp_storage::FlashStorage;
 use heapless::Vec;
-use logic::wifi::LoginData;
+use logic::{blackboard::Targets, wifi::LoginData};
 use picoserve::{AppBuilder, AppRouter};
 use sequential_storage::cache::NoCache;
 
@@ -94,6 +95,14 @@ async fn main(spawner: Spawner) -> ! {
     let credentials: Signal<CriticalSectionRawMutex, LoginData> = Signal::new();
     let credentials: &'static _ =
         mk_static!(Signal<CriticalSectionRawMutex, LoginData>, credentials);
+
+    match (storage.get_ph_target().await, storage.get_ec_target().await) {
+        (Ok(ph), Ok(ec)) => {
+            let targets = Targets { ph, ec };
+            blackboard::set_targets(targets).await;
+        }
+        _ => {}
+    }
 
     spawner
         .spawn(connection(wifi_controller, &ssids, &credentials, storage))

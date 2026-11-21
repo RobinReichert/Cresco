@@ -136,7 +136,7 @@ async fn main(spawner: Spawner) -> ! {
 
     let mut ec_pump = Tmc2209::new(peripherals.GPIO2, peripherals.GPIO3, 200);
     let mut ph_up_pump = Tmc2209::new(peripherals.GPIO4, peripherals.GPIO5, 200);
-    let mut ph_down_pump = Tmc2209::new(peripherals.GPIO6, peripherals.GPIO8, 200);
+    let mut ph_down_pump = Tmc2209::new(peripherals.GPIO6, peripherals.GPIO7, 200);
     let _ = ec_pump.release().await;
     let _ = ph_up_pump.release().await;
     let _ = ph_down_pump.release().await;

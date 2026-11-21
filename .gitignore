@@ -34,3 +34,4 @@ cresco.local.ps1
 # ESP-IDF generated config
 camera/sdkconfig
 camera/sdkconfig.old
+__pycache__/

@@ -24,7 +24,7 @@ The control maths lives in `logic::pid`.
 
 ## Pumps
 
-`dose_task` owns three pumps, all of type `ConcreteStepper`:
+`dose_task` owns three pumps, all of type `ConcreteStepper`
 
 | Pump | Effect |
 | --- | --- |
@@ -75,5 +75,7 @@ motor stays cool between cycles.
 | Constant | Value | Meaning |
 | --- | --- | --- |
 | `PERIOD_LENGTH` | 60 s | Minimum time between two dosing cycles. |
-| `THRESHOLD` | `1.0` | Smallest control signal, in steps, that is acted on. |
-| `RATE` | `1.0` | Steps per unit of controller output. |
+| `THRESHOLD` | `1.0` | Smallest scaled control signal (`PID output * RATE`) |
+| `RATE` | `100.0` | Steps per unit of controller output. |
+
+Both PID controllers use `Kp = 0.8`, `Ki = 0.1`, `Kd = 1.0`.

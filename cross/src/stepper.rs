@@ -144,6 +144,82 @@ pub mod drv8833 {
     }
 }
 
+pub mod tmc2209 {
+
+    use super::*;
+    use esp_hal::gpio::{Level, Output, OutputConfig, OutputPin};
+
+    pub struct Tmc2209<'a> {
+        step_out: Output<'a>,
+        enable_out: Output<'a>,
+        state: StepperState,
+        resolution: usize,
+    }
+
+    impl<'a> Tmc2209<'a> {
+        pub fn new(
+            step_pin: impl OutputPin + 'a,
+            enable_pin: impl OutputPin + 'a,
+            resolution: usize,
+        ) -> Self {
+            let config = OutputConfig::default();
+            let step_out = Output::new(step_pin, Level::Low, config);
+            let enable_out = Output::new(enable_pin, Level::High, config);
+            Self {
+                step_out,
+                enable_out,
+                state: StepperState::Idle,
+                resolution,
+            }
+        }
+    }
+
+    impl<'a> Stepper for Tmc2209<'a> {
+        type Error = ();
+
+        async fn move_steps(&mut self, steps: isize) -> Result<(), Self::Error> {
+            if steps <= 0 {
+                debug!("stepper: can not move in negative direction");
+                return Err(());
+            }
+            debug!("stepper: move by {} steps", steps);
+            self.enable_out.set_low();
+            for _ in 0..steps {
+                self.step_out.set_high();
+                let _ = embassy_time::Timer::after_micros(32).await;
+                self.step_out.set_low();
+                let _ = embassy_time::Timer::after_micros(32).await;
+            }
+            if matches!(self.state, StepperState::Idle) {
+                self.enable_out.set_high();
+            }
+            Ok(())
+        }
+
+        async fn hold(&mut self) -> Result<(), Self::Error> {
+            debug!("stepper: hold");
+            self.enable_out.set_low();
+            self.state = StepperState::Holding;
+            Ok(())
+        }
+
+        async fn release(&mut self) -> Result<(), Self::Error> {
+            debug!("stepper: release");
+            self.enable_out.set_high();
+            self.state = StepperState::Idle;
+            Ok(())
+        }
+
+        fn state(&self) -> StepperState {
+            self.state
+        }
+
+        fn resolution(&self) -> usize {
+            self.resolution
+        }
+    }
+}
+
 /// Stand-in driver without hardware: it only logs what it is asked to do.
 pub mod dummy {
 

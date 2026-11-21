@@ -85,7 +85,7 @@ pub async fn dose_task(
                     } else {
                         debug!(
                             "dose: {} steps are below threshold: {}",
-                            ec_steps, THRESHOLD
+                            ph_steps, THRESHOLD
                         );
                     }
                 }

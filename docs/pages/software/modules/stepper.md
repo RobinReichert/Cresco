@@ -8,8 +8,10 @@ nav_order: 7
 # Stepper
 
 The `stepper` module drives stepper motors. It defines a hardware-agnostic
-`Stepper` trait and ships one implementation, `Drv8833`, that drives a bipolar
-stepper through a [DRV8833](https://www.ti.com/product/DRV8833) dual H-bridge.
+`Stepper` trait and ships two implementations: `Drv8833`, which drives a bipolar
+stepper through a [DRV8833](https://www.ti.com/product/DRV8833) dual H-bridge,
+and `Tmc2209`, which drives a tmc2209
+step/enable stepper driver (used for the dosing pumps).
 The trait lets the rest of the system command motion without knowing which
 driver chip is wired up.
 
@@ -21,7 +23,7 @@ driver chip is wired up.
 
 | Method | Meaning |
 | --- | --- |
-| `move_steps(steps)` | Rotate by `steps`. The **sign selects direction**. |
+| `move_steps(steps)` | Rotate by `steps`.(`Tmc2209` only supports positive) |
 | `hold()` | Energise the coils so the motor resists movement. |
 | `release()` | De-energise the coils so the shaft turns freely. |
 | `state()` | The current [resting state](#state). |
@@ -118,3 +120,40 @@ interval between steps.
 > Wave drive energises a single coil per step, so the motor draws roughly **half
 > the current** of a two-phase-on full-step drive and runs noticeably cooler, at
 > the cost of about 30 % less torque.
+
+---
+
+## `Tmc2209`
+
+The TMC2209 is a dedicated stepper driver: it generates the coil currents
+itself and advances one (micro)step per pulse on its `STEP` input. The driver
+therefore only toggles two GPIOs per motor.
+
+```rust
+let pump = Tmc2209::new(
+    peripherals.GPIO2, // STEP
+    peripherals.GPIO3, // EN
+    /* resolution */ 200,
+);
+```
+
+`new` starts `STEP` low and `EN` high. `EN` is **active low**, so the motor
+boots de-energised.
+
+| Pump | `STEP` | `EN` |
+| --- | --- | --- |
+| `ec_pump` | `GPIO2` | `GPIO3` |
+| `ph_up_pump` | `GPIO4` | `GPIO5` |
+| `ph_down_pump` | `GPIO6` | `GPIO8` |
+
+### Behaviour
+
+- `move_steps` pulls `EN` low, then emits one pulse per step (32 µs high,
+  32 µs low). Afterwards it raises `EN` again unless the driver is `Holding`.
+- `hold` pulls `EN` low; `release` raises it.
+- **One direction only.** No `DIR` pin is driven, so the motor turns in the
+  direction set by the `DIR` pin's wiring. `move_steps` returns `Err(())` for
+  `steps <= 0`. This is sufficient for the pumps, as `dose` always passes the
+  magnitude of the dose.
+- `resolution` is the value passed to `new`. It is not derived from the
+  driver's microstepping (`MS1`/`MS2`) configuration, so set it to match.

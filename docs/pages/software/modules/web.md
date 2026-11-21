@@ -165,8 +165,10 @@ A value is `null` if its equation cannot be evaluated. The value is computed on
 the device, because it depends on the device's own time.
 
 `GET /api/target/equation` returns the equation of each sensor, and
-`POST /api/target/equation` takes a json body of the same shape and answers
-`200` once it is accepted:
+`POST /api/target/equation` takes a json body of the same shape, updates the
+blackboard and saves the targets to flash. It answers `200` once they are
+saved, or `500` if writing to flash failed (the new targets are still used until
+the next restart):
 
 ```json
 {

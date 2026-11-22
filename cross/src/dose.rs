@@ -11,7 +11,7 @@ pub type ConcreteStepper<'a> = Tmc2209<'a>;
 
 const PERIOD_LENGTH: Duration = Duration::from_secs(150);
 const THRESHOLD: Float = 12_500.0;
-const RATE: Float = 1_000_000.0;
+const RATE: Float = 500_000.0;
 
 #[embassy_executor::task]
 pub async fn dose_task(

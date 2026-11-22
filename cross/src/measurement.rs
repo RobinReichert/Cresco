@@ -15,7 +15,7 @@ use logic::{
 pub type ConcretePhProbe<'a> = AnalogProbe<'a, GPIO0<'a>>;
 pub type ConcreteEcProbe<'a> = AnalogProbe<'a, GPIO1<'a>>;
 
-const MEASUREMENT_PERIOD: Duration = Duration::from_secs(150);
+const MEASUREMENT_PERIOD: Duration = Duration::from_secs(300);
 
 pub enum MeasurementCommand {
     Abort,

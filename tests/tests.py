@@ -143,7 +143,7 @@ def targets_test(args: argparse.Namespace) -> int:
     with Debugger() as debugger:
         targets = debugger.read("cross::blackboard::TARGETS")
     print(f"targets: {targets}")
-    return 0 if "Constant" in targets else 1
+    return 0 if targets.count("Equation::Constant{c: 5}") == 2 else 1
 
 
 def mdns_normal_test(args: argparse.Namespace) -> int:

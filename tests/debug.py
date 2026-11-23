@@ -22,7 +22,6 @@ class Debugger:
             )
             try:
                 self._execute("-target-select remote :1337")
-                self._execute("-exec-continue")
             except BaseException:
                 self._gdb.exit()
                 raise
@@ -34,28 +33,14 @@ class Debugger:
 
     def __exit__(self, *_) -> None:
         try:
+            self._execute("-target-detach")
             self._gdb.exit()
         finally:
             self._server.terminate()
             self._server.wait()
 
     def read(self, expr: str) -> str:
-        response = self._execute("-exec-interrupt")
-        print(response)
-        try:
-            deadline = time.monotonic() + 5
-            while not any(
-                r["type"] == "notify" and r["message"] == "stopped" for r in response
-            ):
-                if time.monotonic() > deadline:
-                    raise RuntimeError("debugger failed to halt execution")
-                response = self._gdb.get_gdb_response(
-                    timeout_sec=1, raise_error_on_timeout=False
-                )
-                print(response)
-            response = self._execute(f'-data-evaluate-expression "{expr}"')
-        finally:
-            self._execute("-exec-continue")
+        response = self._execute(f'-data-evaluate-expression "{expr}"')
         return next(r["payload"] for r in response if r["type"] == "result")["value"]
 
     def _execute(self, command: str) -> list[dict]:
@@ -68,42 +53,3 @@ class Debugger:
         if err is not None:
             raise RuntimeError(f"{command}: {err['payload']['msg']}")
         return response
-
-
-# TODO: temporary diagnosis for "failed to fill whole buffer", remove once fixed
-DIAGNOSIS = {
-    "find symbol": ["info address cross::blackboard::TARGETS"],
-    "raw read, halted from connect": ["x/4wx &cross::blackboard::TARGETS"],
-    "print, halted from connect": ["print cross::blackboard::TARGETS"],
-    "print after continue and interrupt": [
-        "continue &",
-        "shell sleep 1",
-        "interrupt",
-        "shell sleep 1",
-        "print cross::blackboard::TARGETS",
-    ],
-}
-
-
-def diagnose() -> None:
-    gdb_path = os.environ["GDB_PATH"]
-    subprocess.run(["probe-rs", "--version"])
-    for name, commands in DIAGNOSIS.items():
-        print(f"===== {name} =====", flush=True)
-        server = subprocess.Popen(["probe-rs", "gdb", "--chip", "esp32c3", ELF])
-        try:
-            time.sleep(2)
-            args = [gdb_path, "--nx", "--batch", str(ELF), "-ex", "target remote :1337"]
-            for command in commands:
-                args += ["-ex", command]
-            try:
-                subprocess.run(args, timeout=30)
-            except subprocess.TimeoutExpired:
-                print("gdb timed out", flush=True)
-        finally:
-            server.terminate()
-            server.wait()
-
-
-if __name__ == "__main__":
-    diagnose()

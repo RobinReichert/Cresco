@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from tests import mp_run
+from tests.debug import Debugger
 from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
@@ -138,6 +139,13 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
     assert runner.passed, "set_voltage.py did not pass"
 
 
+def targets_test(args: argparse.Namespace) -> int:
+    with Debugger() as debugger:
+        targets = debugger.read("cross::blackboard::TARGETS")
+    print(f"targets: {targets}")
+    return 0 if "Constant" in targets else 1
+
+
 def mdns_normal_test(args: argparse.Namespace) -> int:
     return mp_run.run("tests/client/mdns_normal.py").wait()
 
@@ -161,6 +169,7 @@ def dns_test(args: argparse.Namespace) -> int:
 TEST_FUNCTIONS: dict[str, Test] = {
     "storage": Test(run_web(storage_test), web_args),
     "dashboard_integrity": Test(run_web(dashboard_integrity_test), web_args),
+    "targets": Test(targets_test),
     "mdns_normal": Test(mdns_normal_test),
     "mdns_resolver": Test(mdns_resolver_test),
     "mdns_legacy": Test(mdns_legacy_test),

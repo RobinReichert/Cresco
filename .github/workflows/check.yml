@@ -288,6 +288,9 @@ jobs:
         env:
           CRESCO_IP: ${{ steps.mdns_resolver.outputs.ip }}
         run: uv run python -m tests.tests storage "$CRESCO_IP"
+      - name: Debugger diagnosis
+        if: ${{ !cancelled() }}
+        run: uv run python -m tests.debug
       - name: Targets
         if: ${{ !cancelled() }}
         run: uv run python -m tests.tests targets

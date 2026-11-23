@@ -68,3 +68,42 @@ class Debugger:
         if err is not None:
             raise RuntimeError(f"{command}: {err['payload']['msg']}")
         return response
+
+
+# TODO: temporary diagnosis for "failed to fill whole buffer", remove once fixed
+DIAGNOSIS = {
+    "find symbol": ["info address cross::blackboard::TARGETS"],
+    "raw read, halted from connect": ["x/4wx &cross::blackboard::TARGETS"],
+    "print, halted from connect": ["print cross::blackboard::TARGETS"],
+    "print after continue and interrupt": [
+        "continue &",
+        "shell sleep 1",
+        "interrupt",
+        "shell sleep 1",
+        "print cross::blackboard::TARGETS",
+    ],
+}
+
+
+def diagnose() -> None:
+    gdb_path = os.environ["GDB_PATH"]
+    subprocess.run(["probe-rs", "--version"])
+    for name, commands in DIAGNOSIS.items():
+        print(f"===== {name} =====", flush=True)
+        server = subprocess.Popen(["probe-rs", "gdb", "--chip", "esp32c3", ELF])
+        try:
+            time.sleep(2)
+            args = [gdb_path, "--nx", "--batch", str(ELF), "-ex", "target remote :1337"]
+            for command in commands:
+                args += ["-ex", command]
+            try:
+                subprocess.run(args, timeout=30)
+            except subprocess.TimeoutExpired:
+                print("gdb timed out", flush=True)
+        finally:
+            server.terminate()
+            server.wait()
+
+
+if __name__ == "__main__":
+    diagnose()

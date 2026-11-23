@@ -40,16 +40,14 @@ class Debugger:
             self._server.wait()
 
     def read(self, expr: str) -> str:
-        response = self._execute(f'-data-evaluate-expression "{expr}"')
-        return next(r["payload"] for r in response if r["type"] == "result")["value"]
+        return self._execute(f'-data-evaluate-expression "{expr}"')["payload"]["value"]
 
-    def _execute(self, command: str) -> list[dict]:
+    def _execute(self, command: str) -> dict:
         response = self._gdb.write(command, timeout_sec=5)
+        while not any(r["type"] == "result" for r in response):
+            response += self._gdb.get_gdb_response(timeout_sec=5)
         print(response)
-        err = next(
-            (r for r in response if r["type"] == "result" and r["message"] == "error"),
-            None,
-        )
-        if err is not None:
-            raise RuntimeError(f"{command}: {err['payload']['msg']}")
-        return response
+        result = next(r for r in response if r["type"] == "result")
+        if result["message"] == "error":
+            raise RuntimeError(f"{command}: {result['payload']['msg']}")
+        return result

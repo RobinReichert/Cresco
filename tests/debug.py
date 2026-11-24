@@ -7,6 +7,7 @@ from pygdbmi.gdbcontroller import GdbController
 
 ROOT = Path(__file__).resolve().parent.parent
 ELF = ROOT / "build/app_embedded/riscv32imc-unknown-none-elf/release/cross"
+IGNORED_CHILDREN = {"<anonymous union>"}
 
 
 class Debugger:
@@ -52,7 +53,11 @@ class Debugger:
             return var["value"]
         command = f"-var-list-children --all-values {var['name']}"
         children = self._execute(command)["payload"]["children"]
-        return {child["exp"]: self._value(child) for child in children}
+        return {
+            child["exp"]: self._value(child)
+            for child in children
+            if child["exp"] not in IGNORED_CHILDREN
+        }
 
     def _execute(self, command: str) -> dict:
         response = self._gdb.write(command, timeout_sec=5)

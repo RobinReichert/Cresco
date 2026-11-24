@@ -39,8 +39,19 @@ class Debugger:
             self._server.terminate()
             self._server.wait()
 
-    def read(self, expr: str) -> str:
-        return self._execute(f'-data-evaluate-expression "{expr}"')["payload"]["value"]
+    def read(self, expr: str) -> dict | str:
+        var = self._execute(f'-var-create - * "{expr}"')["payload"]
+        try:
+            return self._value(var)
+        finally:
+            self._execute(f"-var-delete {var['name']}")
+
+    def _value(self, var: dict) -> dict | str:
+        if var["numchild"] == "0":
+            return var["value"]
+        command = f"-var-list-children --all-values {var['name']}"
+        children = self._execute(command)["payload"]["children"]
+        return {child["exp"]: self._value(child) for child in children}
 
     def _execute(self, command: str) -> dict:
         response = self._gdb.write(command, timeout_sec=5)

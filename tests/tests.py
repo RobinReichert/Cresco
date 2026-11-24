@@ -141,9 +141,10 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
 
 def targets_test(args: argparse.Namespace) -> int:
     with Debugger() as debugger:
-        targets = debugger.read("cross::blackboard::TARGETS")
+        targets = debugger.read("cross::blackboard::TARGETS.inner.value")
     print(f"targets: {targets}")
-    return 0 if targets.count("Equation::Constant{c: 5}") == 2 else 1
+    default = {"c": "5"}
+    return 0 if targets == {"ph": default, "ec": default} else 1
 
 
 def mdns_normal_test(args: argparse.Namespace) -> int:

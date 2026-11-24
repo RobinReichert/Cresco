@@ -144,7 +144,9 @@ def targets_test(args: argparse.Namespace) -> int:
         targets = debugger.read("cross::blackboard::TARGETS.inner.value")
     print(f"targets: {targets}")
     default = {"c": "5"}
-    return 0 if targets == {"ph": default, "ec": default} else 1
+    ph = targets["ph"]["Constant"]
+    ec = targets["ec"]["Constant"]
+    return 0 if ph == default and ec == default else 1
 
 
 def mdns_normal_test(args: argparse.Namespace) -> int:

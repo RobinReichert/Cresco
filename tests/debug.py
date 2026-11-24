@@ -46,7 +46,6 @@ class Debugger:
         response = self._gdb.write(command, timeout_sec=5)
         while not any(r["type"] == "result" for r in response):
             response += self._gdb.get_gdb_response(timeout_sec=5)
-        print(response)
         result = next(r for r in response if r["type"] == "result")
         if result["message"] == "error":
             raise RuntimeError(f"{command}: {result['payload']['msg']}")

@@ -40,6 +40,8 @@ class Debugger:
             self._server.wait()
 
     def read(self, expr: str) -> dict | str:
+        # -var-create hides why an expression fails, this shows gdb's error
+        self._execute(f'-data-evaluate-expression "{expr}"')
         var = self._execute(f'-var-create - * "{expr}"')["payload"]
         try:
             return self._value(var)

@@ -11,7 +11,8 @@ from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from tests import mp_run
-from tests.debug import Debugger
+from tests.debug import symbols
+from tests.debug.debugger import Debugger
 from tests.mp_run import Run, run
 from tests.web.dashboard import DashboardPage
 
@@ -141,7 +142,7 @@ def dashboard_integrity_test(driver: WebDriver, address: IPv4Address) -> None:
 
 def targets_test(args: argparse.Namespace) -> int:
     with Debugger() as debugger:
-        targets = debugger.read("cross::blackboard::TARGETS.inner.value")
+        targets = debugger.read(symbols.TARGETS.value)
     print(f"targets: {targets}")
     default = {"c": "5"}
     ph = targets["ph"]["Constant"]

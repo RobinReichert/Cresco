@@ -2,12 +2,24 @@ import subprocess
 import time
 import os
 from pathlib import Path
+from typing import Any
 
 from pygdbmi.gdbcontroller import GdbController
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 ELF = ROOT / "build/app_embedded/riscv32imc-unknown-none-elf/release/cross"
 IGNORED_CHILDREN = {"<anonymous union>"}
+
+
+class Expr:
+    def __init__(self, expr: "str | Expr") -> None:
+        self._expr = expr.to_expr() if isinstance(expr, Expr) else expr
+
+    def to_expr(self) -> str:
+        return self._expr
+
+    def _concat(self, *fields: str) -> "Expr":
+        return Expr(".".join([self._expr, *fields]))
 
 
 class Debugger:
@@ -40,14 +52,6 @@ class Debugger:
             self._server.terminate()
             self._server.wait()
 
-    def read(self, expr: str) -> dict | str:
-        self._execute(f'-data-evaluate-expression "{expr}"')
-        var = self._execute(f'-var-create - * "{expr}"')["payload"]
-        try:
-            return self._value(var)
-        finally:
-            self._execute(f"-var-delete {var['name']}")
-
     def _value(self, var: dict) -> dict | str:
         if var["numchild"] == "0":
             return var["value"]
@@ -67,3 +71,15 @@ class Debugger:
         if result["message"] == "error":
             raise RuntimeError(f"{command}: {result['payload']['msg']}")
         return result
+
+    def read(self, expr: Expr) -> Any:
+        ex = expr.to_expr()
+        self._execute(f'-data-evaluate-expression "{ex}"')
+        var = self._execute(f'-var-create - * "{ex}"')["payload"]
+        try:
+            return self._value(var)
+        finally:
+            self._execute(f"-var-delete {var['name']}")
+
+    def write(self, expr: Expr, value: str) -> None:
+        self._execute(f'-data-evaluate-expression "{expr.to_expr()} = {value}"')

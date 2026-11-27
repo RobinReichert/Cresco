@@ -114,6 +114,40 @@ arguments to the subparser of that test. Write one like `web_args` and read the
 values from `args` in the test function. Tests without extra arguments need
 none.
 
+## Debug API
+
+`tests/debug/` reads and writes static variables of the device under test with
+`probe-rs gdb` and gdb.
+
+```python
+from tests.debug import symbols
+from tests.debug.debugger import Debugger
+
+with Debugger() as debugger:
+    targets = debugger.read(symbols.TARGETS.value)
+```
+
+- `read` returns the value as nested dicts. Leaves are strings as gdb prints
+  them, for example `{'ph': {'Constant': {'c': '5'}}, ...}`. An enum shows up
+  as `{variant: fields}`.
+- `write(expr, value)` assigns `value` in gdb's syntax to the variable at
+  `expr`. No test uses it yet.
+- The chip is halted for the whole `with` block, and gdb detaches when it
+  ends. probe-rs 0.32 cannot halt it a second time in one session, so open a
+  new block for a fresh value.
+
+`tests/debug/symbols.py` holds the paths to the variables. A wrapper type such
+as `Mutex` gets a class that knows its layout, and `value` leads to the
+content. Add a variable there before a test uses it:
+
+```python
+MEASUREMENTS = Mutex("cross::blackboard::MEASUREMENTS")
+```
+
+Check that the firmware does not hold a lock before writing with
+`debugger.read(symbols.TARGETS.locked) == "false"`. Writing to a `Signal` or
+`Channel` does not wake the task that waits on it.
+
 ## Setup
 
 ### 1. Flash MicroPython on the client board

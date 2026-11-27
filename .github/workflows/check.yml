@@ -246,6 +246,7 @@ jobs:
     env:
       PROBE_RS_PROBE: ${{ vars.PROBE_RS_PROBE }}
       MP_PORT: ${{ vars.MP_PORT }}
+      GDB_PATH: ${{ vars.GDB_PATH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -287,3 +288,6 @@ jobs:
         env:
           CRESCO_IP: ${{ steps.mdns_resolver.outputs.ip }}
         run: uv run python -m tests.tests storage "$CRESCO_IP"
+      - name: Targets
+        if: ${{ !cancelled() }}
+        run: uv run python -m tests.tests targets
